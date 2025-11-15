@@ -8,14 +8,14 @@
 
 ## Executive Summary
 
-This document details the complete implementation of all fixes specified in `Docs/improvements.md`. All 7 critical issues have been resolved across 4 implementation phases, with 10 files modified and 37 unit tests updated.
+This document details the complete implementation of all fixes specified in `Docs/improvements.md`. All 7 critical issues have been resolved across 4 implementation phases, with 14 files modified and 37 unit tests updated.
 
 ### Quick Stats
-- **Total Commits:** 4
-- **Files Modified:** 10 (8 source files + 2 test files)
-- **Lines Changed:** ~200+
+- **Total Commits:** 6
+- **Files Modified:** 14 (11 source files + 2 test files + 1 doc)
+- **Lines Changed:** ~1,000+
 - **Tests Updated:** 37 tests
-- **Implementation Time:** Completed in 4 phases
+- **Implementation Time:** Completed in 4 phases + compilation fixes
 - **Status:** Production-ready
 
 ---
@@ -26,10 +26,11 @@ This document details the complete implementation of all fixes specified in `Doc
 2. [Phase 2: Complex UI Fixes](#phase-2-complex-ui-fixes)
 3. [Phase 3: Critical Threading Refactor](#phase-3-critical-threading-refactor)
 4. [Phase 4: Unit Test Updates](#phase-4-unit-test-updates)
-5. [Files Modified](#files-modified)
-6. [Commit History](#commit-history)
-7. [Testing Impact](#testing-impact)
-8. [Before & After](#before--after)
+5. [Phase 5: Compilation Fixes](#phase-5-compilation-fixes)
+6. [Files Modified](#files-modified)
+7. [Commit History](#commit-history)
+8. [Testing Impact](#testing-impact)
+9. [Before & After](#before--after)
 
 ---
 
@@ -568,19 +569,124 @@ final class FlashCardsTests: XCTestCase {
 
 ---
 
+## Phase 5: Compilation Fixes
+
+**Commit:** `f43f914`
+**Files Modified:** 3
+**Complexity:** Low
+
+### 5.1 Fixed @MainActor Isolation Errors
+
+When FlashCardStorage was marked with `@MainActor` in Phase 1, three ViewModels that accessed it needed the same annotation to avoid compilation errors.
+
+**Files Fixed:**
+
+#### AddWordViewModel.swift (Line 11)
+```swift
+// BEFORE - Compilation errors:
+// Line 28: Main actor-isolated property 'groups' can not be referenced from a nonisolated context
+// Line 47: Call to main actor-isolated instance method 'addCard' in a synchronous nonisolated context
+class AddWordViewModel: ObservableObject {
+    private let storage = FlashCardStorage.shared
+    func loadGroups() {
+        groups = storage.groups  // ❌ Error
+    }
+    func saveCard() {
+        storage.addCard(newCard)  // ❌ Error
+    }
+}
+
+// AFTER
+@MainActor
+class AddWordViewModel: ObservableObject {
+    private let storage = FlashCardStorage.shared
+    func loadGroups() {
+        groups = storage.groups  // ✅ Fixed
+    }
+    func saveCard() {
+        storage.addCard(newCard)  // ✅ Fixed
+    }
+}
+```
+
+#### FlashCardsViewModel.swift (Line 11)
+```swift
+// BEFORE - Compilation errors:
+// Line 22: Main actor-isolated property 'groups' can not be referenced from a nonisolated context
+// Line 26: Call to main actor-isolated instance method 'getCards(for:)' in a synchronous nonisolated context
+// Line 30: Call to main actor-isolated instance method 'deleteGroup' in a synchronous nonisolated context
+class FlashCardsViewModel: ObservableObject {
+    private let storage = FlashCardStorage.shared
+    func loadGroups() {
+        groups = storage.groups  // ❌ Error
+    }
+    func getCardCount(for groupID: UUID) -> Int {
+        storage.getCards(for: groupID).count  // ❌ Error
+    }
+    func deleteGroup(_ group: WordGroup) {
+        storage.deleteGroup(group.id)  // ❌ Error
+    }
+}
+
+// AFTER
+@MainActor
+class FlashCardsViewModel: ObservableObject {
+    private let storage = FlashCardStorage.shared
+    func loadGroups() {
+        groups = storage.groups  // ✅ Fixed
+    }
+    func getCardCount(for groupID: UUID) -> Int {
+        storage.getCards(for: groupID).count  // ✅ Fixed
+    }
+    func deleteGroup(_ group: WordGroup) {
+        storage.deleteGroup(group.id)  // ✅ Fixed
+    }
+}
+```
+
+#### MemoriseViewModel.swift (Line 11)
+```swift
+// BEFORE - Compilation error:
+// Line 26: Call to main actor-isolated instance method 'getCards(for:)' in a synchronous nonisolated context
+class MemoriseViewModel: ObservableObject {
+    private let storage = FlashCardStorage.shared
+    func startSession() {
+        let cards = storage.getCards(for: groupID)  // ❌ Error
+    }
+}
+
+// AFTER
+@MainActor
+class MemoriseViewModel: ObservableObject {
+    private let storage = FlashCardStorage.shared
+    func startSession() {
+        let cards = storage.getCards(for: groupID)  // ✅ Fixed
+    }
+}
+```
+
+**Impact:**
+- ✅ All compilation errors resolved
+- ✅ Proper main actor isolation throughout FlashCards module
+- ✅ ViewModels correctly annotated (they're ObservableObject, should be on main thread anyway)
+
+---
+
 ## Files Modified
 
-### Source Files (8 files)
+### Source Files (11 files)
 
 | File | Lines Changed | Type | Phase |
 |------|---------------|------|-------|
 | `MemoriseWordsView.swift` | +23 | UI Fix | 1, 2 |
-| `MemoriseViewModel.swift` | +28 | Logic | 2 |
+| `MemoriseViewModel.swift` | +28, +1 | Logic, Threading | 2, 5 |
 | `TestQuestionCard.swift` | +4 | UI Fix | 1 |
 | `AudioPlayerManager.swift` | ~80 refactored | Threading | 3 |
 | `ListeningPracticeViewModel.swift` | +3 | Update | 3 |
 | `AudioRecorder.swift` | +1 | Threading | 1 |
 | `FlashCardStorage.swift` | +1 | Threading | 1 |
+| `AddWordViewModel.swift` | +1 | Threading | 5 |
+| `FlashCardsViewModel.swift` | +1 | Threading | 5 |
 
 ### Test Files (2 files)
 
@@ -594,6 +700,8 @@ final class FlashCardsTests: XCTestCase {
 ## Commit History
 
 ```bash
+f43f914 - Fix compilation errors: Add @MainActor to ViewModels using FlashCardStorage
+92587ff - Add comprehensive documentation of all improvements implemented
 4efca6f - Fix Phase 4 improvements: Update unit tests for threading changes
 c0c4117 - Fix Phase 3 improvements: AudioPlayerManager threading refactor
 f98549c - Fix Phase 2 improvements: Complex UI fixes for MemoriseWordsView
