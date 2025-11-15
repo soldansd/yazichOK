@@ -82,6 +82,7 @@ class MemoriseViewModel: ObservableObject {
     }
 
     deinit {
-        stopTimer()
+        timer?.invalidate()
+        timer = nil
     }
 }

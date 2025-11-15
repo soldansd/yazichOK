@@ -74,12 +74,18 @@ struct MemoriseWordsView: View {
 
             // Flash card
             if let currentCard = viewModel.session?.currentCard {
-                flashCardView(for: currentCard)
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(.white)
+                    .shadow(radius: 8)
+                    .frame(height: 400)
                     .padding(.horizontal, 24)
                     .rotation3DEffect(
                         .degrees(cardRotation),
                         axis: (x: 0, y: 1, z: 0)
                     )
+                    .overlay {
+                        flashCardView(for: currentCard)
+                    }
                     .onTapGesture {
                         // Hide text first
                         withAnimation(.easeOut(duration: 0.2)) {
@@ -183,70 +189,57 @@ struct MemoriseWordsView: View {
     }
 
     private func flashCardView(for card: FlashCard) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white)
-                .shadow(radius: 8)
+        VStack(spacing: 20) {
+            Spacer()
 
-            VStack(spacing: 20) {
-                Text("English")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
+            if viewModel.session?.showingTranslation == false {
+                // Front side
+                VStack(spacing: 12) {
+                    Text(card.word)
+                        .font(.system(size: 42, weight: .bold))
+                        .multilineTextAlignment(.center)
+
+                    if !card.pronunciation.isEmpty {
+                        Text(card.pronunciation)
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .opacity(textOpacity)
 
                 Spacer()
 
-                if viewModel.session?.showingTranslation == false {
-                    // Front side
-                    VStack(spacing: 12) {
-                        Text(card.word)
-                            .font(.system(size: 42, weight: .bold))
-                            .multilineTextAlignment(.center)
-
-                        if !card.pronunciation.isEmpty {
-                            Text(card.pronunciation)
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .opacity(textOpacity)
-
-                    Spacer()
-
-                    HStack(spacing: 8) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundStyle(.darkBlue)
-                        Text("Tap to flip")
-                            .foregroundStyle(.darkBlue)
-                    }
-                    .font(.subheadline)
-                    .padding(.bottom)
-                    .opacity(textOpacity)
-                } else {
-                    // Back side
-                    VStack(spacing: 16) {
-                        Text(card.translation)
-                            .font(.system(size: 36, weight: .semibold))
-                            .multilineTextAlignment(.center)
-
-                        if !card.exampleSentence.isEmpty {
-                            Text(card.exampleSentence)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                        }
-                    }
-                    .opacity(textOpacity)
-
-                    Spacer()
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundStyle(.darkBlue)
+                    Text("Tap to flip")
+                        .foregroundStyle(.darkBlue)
                 }
+                .font(.subheadline)
+                .padding(.bottom)
+                .opacity(textOpacity)
+            } else {
+                // Back side
+                VStack(spacing: 16) {
+                    Text(card.translation)
+                        .font(.system(size: 36, weight: .semibold))
+                        .multilineTextAlignment(.center)
+
+                    if !card.exampleSentence.isEmpty {
+                        Text(card.exampleSentence)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                }
+                .opacity(textOpacity)
+
+                Spacer()
             }
-            .padding(.vertical, 32)
-            .padding(.horizontal, 24)
         }
-        .frame(height: 400)
+        .padding(.vertical, 32)
+        .padding(.horizontal, 24)
     }
 
     private var statisticsView: some View {
