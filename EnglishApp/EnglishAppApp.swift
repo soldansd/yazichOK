@@ -9,10 +9,14 @@ import SwiftUI
 
 @main
 struct EnglishAppApp: App {
+    @StateObject private var authManager = MockAuthManager.shared
+
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                HomeView()
+            if authManager.isAuthenticated {
+                MainTabView()
+            } else {
+                SignInView()
             }
         }
     }
