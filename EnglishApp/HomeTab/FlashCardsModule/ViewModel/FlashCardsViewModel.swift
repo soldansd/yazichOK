@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 
-@MainActor
 class FlashCardsViewModel: ObservableObject {
     @Published var groups: [WordGroup] = []
     @Published var showingAddGroup = false
@@ -16,19 +15,25 @@ class FlashCardsViewModel: ObservableObject {
     private let storage = FlashCardStorage.shared
 
     init() {
-        loadGroups()
+        Task {
+            await loadGroups()
+        }
     }
 
-    func loadGroups() {
-        groups = storage.groups
+    func loadGroups() async {
+        let loadedGroups = await MainActor.run { storage.groups }
+        await MainActor.run {
+            self.groups = loadedGroups
+        }
     }
 
-    func getCardCount(for groupID: UUID) -> Int {
-        storage.getCards(for: groupID).count
+    func getCardCount(for groupID: UUID) async -> Int {
+        let cards = await storage.getCards(for: groupID)
+        return cards.count
     }
 
-    func deleteGroup(_ group: WordGroup) {
-        storage.deleteGroup(group.id)
-        loadGroups()
+    func deleteGroup(_ group: WordGroup) async {
+        await storage.deleteGroup(group.id)
+        await loadGroups()
     }
 }

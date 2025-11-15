@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 
-@MainActor
 class MemoriseViewModel: ObservableObject {
     @Published var session: ReviewSession?
     @Published var showingStatistics = false
@@ -20,17 +19,21 @@ class MemoriseViewModel: ObservableObject {
 
     init(groupID: UUID) {
         self.groupID = groupID
-        startSession()
+        Task {
+            await startSession()
+        }
     }
 
-    func startSession() {
-        let cards = storage.getCards(for: groupID)
-        guard !cards.isEmpty else {
-            showingStatistics = true
-            return
+    func startSession() async {
+        let cards = await storage.getCards(for: groupID)
+        await MainActor.run {
+            guard !cards.isEmpty else {
+                self.showingStatistics = true
+                return
+            }
+            self.session = ReviewSession(groupID: self.groupID, cards: cards)
+            self.startTimer()
         }
-        session = ReviewSession(groupID: groupID, cards: cards)
-        startTimer()
     }
 
     func flipCard() {
@@ -56,9 +59,12 @@ class MemoriseViewModel: ObservableObject {
 
     func restartSession() {
         showingStatistics = false
-        startSession()
+        Task {
+            await startSession()
+        }
     }
 
+    @MainActor
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in

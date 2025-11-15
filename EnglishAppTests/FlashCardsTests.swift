@@ -9,7 +9,6 @@ import XCTest
 import SwiftUI
 @testable import EnglishApp
 
-@MainActor
 final class FlashCardsTests: XCTestCase {
 
     // MARK: - Model Tests

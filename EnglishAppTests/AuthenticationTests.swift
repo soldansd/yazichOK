@@ -9,17 +9,15 @@ import XCTest
 import SwiftUI
 @testable import EnglishApp
 
-@MainActor
 final class AuthenticationTests: XCTestCase {
 
     var authManager: MockAuthManager!
 
-    @MainActor
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         // Note: Using shared instance, so we need to clean up state
         authManager = MockAuthManager.shared
-        authManager.signOut() // Clean state
+        await authManager.signOut() // Clean state
     }
 
     @MainActor

@@ -8,7 +8,6 @@
 import XCTest
 @testable import EnglishApp
 
-@MainActor
 final class ListeningPracticePhase3: XCTestCase {
 
     // MARK: - AudioMaterial Model Tests

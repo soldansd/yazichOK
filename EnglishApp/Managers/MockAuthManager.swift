@@ -37,7 +37,6 @@ enum AuthError: LocalizedError {
     }
 }
 
-@MainActor
 final class MockAuthManager: ObservableObject {
     static let shared = MockAuthManager()
 
@@ -55,8 +54,8 @@ final class MockAuthManager: ObservableObject {
 
     // MARK: - Sign In
 
-    func signIn(email: String, password: String) throws {
-        // Validate inputs
+    func signIn(email: String, password: String) async throws {
+        // Validate inputs (background thread)
         guard !email.isEmpty, !password.isEmpty else {
             throw AuthError.emptyFields
         }
@@ -65,26 +64,30 @@ final class MockAuthManager: ObservableObject {
             throw AuthError.invalidEmail
         }
 
-        // Check if user exists
+        // Check if user exists (background thread)
         guard let userData = users[email.lowercased()] else {
             throw AuthError.userNotFound
         }
 
-        // Check password
+        // Check password (background thread)
         guard userData.password == password else {
             throw AuthError.incorrectPassword
         }
 
-        // Sign in successful
-        currentUser = userData.user
-        isAuthenticated = true
+        // Update UI state on main thread
+        await MainActor.run {
+            self.currentUser = userData.user
+            self.isAuthenticated = true
+        }
+
+        // Save state (background thread)
         saveAuthState()
     }
 
     // MARK: - Sign Up
 
-    func signUp(fullName: String, email: String, password: String, confirmPassword: String) throws {
-        // Validate inputs
+    func signUp(fullName: String, email: String, password: String, confirmPassword: String) async throws {
+        // Validate inputs (background thread)
         guard !fullName.isEmpty, !email.isEmpty, !password.isEmpty, !confirmPassword.isEmpty else {
             throw AuthError.emptyFields
         }
@@ -101,26 +104,35 @@ final class MockAuthManager: ObservableObject {
             throw AuthError.passwordsDoNotMatch
         }
 
-        // Check if email already exists
+        // Check if email already exists (background thread)
         guard users[email.lowercased()] == nil else {
             throw AuthError.emailAlreadyExists
         }
 
-        // Create new user
+        // Create new user (background thread)
         let newUser = User(fullName: fullName, email: email)
         users[email.lowercased()] = (password: password, user: newUser)
 
-        // Auto sign in after sign up
-        currentUser = newUser
-        isAuthenticated = true
+        // Update UI state on main thread
+        await MainActor.run {
+            self.currentUser = newUser
+            self.isAuthenticated = true
+        }
+
+        // Save state (background thread)
         saveAuthState()
     }
 
     // MARK: - Sign Out
 
-    func signOut() {
-        currentUser = nil
-        isAuthenticated = false
+    func signOut() async {
+        // Update UI state on main thread
+        await MainActor.run {
+            self.currentUser = nil
+            self.isAuthenticated = false
+        }
+
+        // Clear state (background thread)
         clearAuthState()
     }
 
@@ -135,17 +147,26 @@ final class MockAuthManager: ObservableObject {
     // MARK: - Persistence
 
     private func saveAuthState() {
-        UserDefaults.standard.set(isAuthenticated, forKey: isAuthenticatedKey)
-        if let user = currentUser, let encoded = try? JSONEncoder().encode(user) {
-            UserDefaults.standard.set(encoded, forKey: currentUserKey)
+        Task { @MainActor in
+            UserDefaults.standard.set(self.isAuthenticated, forKey: self.isAuthenticatedKey)
+            if let user = self.currentUser, let encoded = try? JSONEncoder().encode(user) {
+                UserDefaults.standard.set(encoded, forKey: self.currentUserKey)
+            }
         }
     }
 
     private func loadAuthState() {
-        isAuthenticated = UserDefaults.standard.bool(forKey: isAuthenticatedKey)
+        let authenticated = UserDefaults.standard.bool(forKey: isAuthenticatedKey)
+        var user: User? = nil
+
         if let userData = UserDefaults.standard.data(forKey: currentUserKey),
-           let user = try? JSONDecoder().decode(User.self, from: userData) {
-            currentUser = user
+           let decodedUser = try? JSONDecoder().decode(User.self, from: userData) {
+            user = decodedUser
+        }
+
+        Task { @MainActor in
+            self.isAuthenticated = authenticated
+            self.currentUser = user
         }
     }
 
