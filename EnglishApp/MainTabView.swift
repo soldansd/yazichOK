@@ -24,7 +24,7 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            ProgressView()
+            ProgressTabView()
                 .tabItem {
                     Label("Progress", systemImage: "trophy.fill")
                 }

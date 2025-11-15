@@ -38,35 +38,40 @@ class AudioPlayerManager: ObservableObject {
     }
 
     func loadAudio(_ audioMaterial: AudioMaterial) {
-        reset()
-        isLoading = true
-        currentAudio = audioMaterial
-
-        // For now, use mock URL since we don't have actual audio files
-        // In a real app, this would load from Bundle.main or a network URL
-        let mockURL: URL?
-
-        if let filename = audioMaterial.filename {
-            // Try to load from bundle (will fail gracefully if file doesn't exist)
-            mockURL = Bundle.main.url(forResource: filename.replacingOccurrences(of: ".mp3", with: ""), withExtension: "mp3")
-        } else if let urlString = audioMaterial.url {
-            mockURL = URL(string: urlString)
-        } else {
-            mockURL = nil
-        }
-
-        // Since we don't have actual audio files, simulate loading
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        // Ensure all published property changes happen on main thread
+        DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
 
-            if let url = mockURL {
-                self.setupPlayer(with: url, duration: audioMaterial.duration)
+            self.reset()
+            self.isLoading = true
+            self.currentAudio = audioMaterial
+
+            // For now, use mock URL since we don't have actual audio files
+            // In a real app, this would load from Bundle.main or a network URL
+            let mockURL: URL?
+
+            if let filename = audioMaterial.filename {
+                // Try to load from bundle (will fail gracefully if file doesn't exist)
+                mockURL = Bundle.main.url(forResource: filename.replacingOccurrences(of: ".mp3", with: ""), withExtension: "mp3")
+            } else if let urlString = audioMaterial.url {
+                mockURL = URL(string: urlString)
             } else {
-                // Mock playback for development
-                self.setupMockPlayer(duration: audioMaterial.duration)
+                mockURL = nil
             }
 
-            self.isLoading = false
+            // Since we don't have actual audio files, simulate loading
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self = self else { return }
+
+                if let url = mockURL {
+                    self.setupPlayer(with: url, duration: audioMaterial.duration)
+                } else {
+                    // Mock playback for development
+                    self.setupMockPlayer(duration: audioMaterial.duration)
+                }
+
+                self.isLoading = false
+            }
         }
     }
 
