@@ -67,8 +67,12 @@ struct AddNewWordsGroupView: View {
         guard !groupName.isEmpty else { return }
 
         let newGroup = WordGroup(name: groupName.trimmingCharacters(in: .whitespacesAndNewlines))
-        storage.addGroup(newGroup)
-        coordinator.pop()
+        Task {
+            await storage.addGroup(newGroup)
+            await MainActor.run {
+                coordinator.pop()
+            }
+        }
     }
 }
 

@@ -8,7 +8,6 @@
 import XCTest
 @testable import EnglishApp
 
-@MainActor
 final class ListeningPracticePhase3: XCTestCase {
 
     // MARK: - AudioMaterial Model Tests
@@ -93,15 +92,10 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-
-        XCTAssertTrue(player.isLoading)
-        XCTAssertEqual(player.currentAudio?.id, audio.id)
-
-        // Wait for loading to complete
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
 
         XCTAssertFalse(player.isLoading)
+        XCTAssertEqual(player.currentAudio?.id, audio.id)
         XCTAssertEqual(player.duration, audio.duration)
     }
 
@@ -109,15 +103,16 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
 
         XCTAssertFalse(player.isPlaying)
 
         player.play()
+        try? await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertTrue(player.isPlaying)
 
         player.pause()
+        try? await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertFalse(player.isPlaying)
     }
 
@@ -125,8 +120,7 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
 
         // Manually set current time
         player.play()
@@ -134,6 +128,7 @@ final class ListeningPracticePhase3: XCTestCase {
 
         let timeBefore = player.currentTime
         player.seekBackward(by: 10)
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertLessThan(player.currentTime, timeBefore)
     }
@@ -142,11 +137,11 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
 
         let timeBefore = player.currentTime
         player.seekForward(by: 10)
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertGreaterThanOrEqual(player.currentTime, timeBefore)
     }
@@ -155,11 +150,12 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
         player.play()
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         player.reset()
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertFalse(player.isPlaying)
         XCTAssertEqual(player.currentTime, 0)
@@ -169,6 +165,7 @@ final class ListeningPracticePhase3: XCTestCase {
 
     // MARK: - ListeningPracticeViewModel Tests
 
+    @MainActor
     func testListeningPracticeViewModelInitialization() {
         let viewModel = ListeningPracticeViewModel()
 
@@ -176,6 +173,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertNotNil(viewModel.currentAudio)
     }
 
+    @MainActor
     func testListeningPracticeViewModelAutoSelectFirstUnlockedAudio() {
         let viewModel = ListeningPracticeViewModel()
 
@@ -183,6 +181,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertFalse(viewModel.currentAudio?.isLocked ?? true)
     }
 
+    @MainActor
     func testListeningPracticeViewModelSelectAudio() async {
         let viewModel = ListeningPracticeViewModel()
         let audioToSelect = viewModel.audioMaterials.first { $0.id == "travel-dialogue" && !$0.isLocked }
@@ -197,6 +196,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertEqual(viewModel.currentAudio?.id, audio.id)
     }
 
+    @MainActor
     func testListeningPracticeViewModelCannotSelectLockedAudio() {
         let viewModel = ListeningPracticeViewModel()
         let lockedAudio = viewModel.audioMaterials.first { $0.isLocked }
@@ -212,6 +212,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertEqual(viewModel.currentAudio?.id, previousAudio?.id)
     }
 
+    @MainActor
     func testListeningPracticeViewModelUpcomingAudio() {
         let viewModel = ListeningPracticeViewModel()
 
@@ -223,6 +224,7 @@ final class ListeningPracticePhase3: XCTestCase {
         }
     }
 
+    @MainActor
     func testListeningPracticeViewModelTogglePlayPause() async {
         let viewModel = ListeningPracticeViewModel()
         let player = AudioPlayerManager.shared
@@ -239,6 +241,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertFalse(player.isPlaying)
     }
 
+    @MainActor
     func testListeningPracticeViewModelSeekBackward() async {
         let viewModel = ListeningPracticeViewModel()
         let player = AudioPlayerManager.shared
@@ -254,6 +257,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertLessThanOrEqual(player.currentTime, timeBefore)
     }
 
+    @MainActor
     func testListeningPracticeViewModelSeekForward() async {
         let viewModel = ListeningPracticeViewModel()
         let player = AudioPlayerManager.shared
@@ -266,6 +270,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertGreaterThanOrEqual(player.currentTime, timeBefore)
     }
 
+    @MainActor
     func testListeningPracticeViewModelCompletedCount() {
         let viewModel = ListeningPracticeViewModel()
 
@@ -273,6 +278,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertGreaterThanOrEqual(completed, 0)
     }
 
+    @MainActor
     func testListeningPracticeViewModelTotalCount() {
         let viewModel = ListeningPracticeViewModel()
 
@@ -281,6 +287,7 @@ final class ListeningPracticePhase3: XCTestCase {
         XCTAssertGreaterThan(total, 0)
     }
 
+    @MainActor
     func testListeningPracticeViewModelFormatTime() {
         let viewModel = ListeningPracticeViewModel()
 
@@ -293,6 +300,7 @@ final class ListeningPracticePhase3: XCTestCase {
 
     // MARK: - Integration Tests
 
+    @MainActor
     func testFullListeningFlow() async {
         let viewModel = ListeningPracticeViewModel()
         let player = AudioPlayerManager.shared
@@ -357,13 +365,11 @@ final class ListeningPracticePhase3: XCTestCase {
         let audio1 = AudioMaterial.mockAudioMaterials[0]
         let audio2 = AudioMaterial.mockAudioMaterials[4]
 
-        player.loadAudio(audio1)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio1)
 
         XCTAssertEqual(player.currentAudio?.id, audio1.id)
 
-        player.loadAudio(audio2)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio2)
 
         XCTAssertEqual(player.currentAudio?.id, audio2.id)
         XCTAssertFalse(player.isPlaying) // Should reset when loading new audio

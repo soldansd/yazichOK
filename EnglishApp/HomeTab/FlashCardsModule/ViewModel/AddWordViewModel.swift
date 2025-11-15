@@ -20,19 +20,26 @@ class AddWordViewModel: ObservableObject {
     private let storage = FlashCardStorage.shared
 
     init() {
-        loadGroups()
-        selectedGroup = groups.first
+        Task {
+            await loadGroups()
+        }
     }
 
-    func loadGroups() {
-        groups = storage.groups
+    func loadGroups() async {
+        let loadedGroups = await MainActor.run { storage.groups }
+        await MainActor.run {
+            self.groups = loadedGroups
+            if self.selectedGroup == nil {
+                self.selectedGroup = loadedGroups.first
+            }
+        }
     }
 
     var isValid: Bool {
         !word.isEmpty && !translation.isEmpty && selectedGroup != nil
     }
 
-    func saveCard() {
+    func saveCard() async {
         guard isValid, let group = selectedGroup else { return }
 
         let newCard = FlashCard(
@@ -44,7 +51,7 @@ class AddWordViewModel: ObservableObject {
             difficulty: selectedDifficulty
         )
 
-        storage.addCard(newCard)
+        await storage.addCard(newCard)
     }
 
     func clearForm() {

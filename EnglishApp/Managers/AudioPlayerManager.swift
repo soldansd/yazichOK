@@ -9,7 +9,6 @@ import Foundation
 import AVFoundation
 import Combine
 
-@MainActor
 class AudioPlayerManager: ObservableObject {
     static let shared = AudioPlayerManager()
 
@@ -33,62 +32,70 @@ class AudioPlayerManager: ObservableObject {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            playbackError = "Audio session setup failed: \(error.localizedDescription)"
+            Task { @MainActor in
+                self.playbackError = "Audio session setup failed: \(error.localizedDescription)"
+            }
         }
     }
 
-    func loadAudio(_ audioMaterial: AudioMaterial) {
-        // Ensure all published property changes happen on main thread
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-
+    func loadAudio(_ audioMaterial: AudioMaterial) async {
+        // Update UI state on main thread
+        await MainActor.run {
             self.reset()
             self.isLoading = true
             self.currentAudio = audioMaterial
+        }
 
-            // For now, use mock URL since we don't have actual audio files
-            // In a real app, this would load from Bundle.main or a network URL
-            let mockURL: URL?
+        // Heavy work on background thread - file/URL resolution
+        let mockURL: URL?
 
-            if let filename = audioMaterial.filename {
-                // Try to load from bundle (will fail gracefully if file doesn't exist)
-                mockURL = Bundle.main.url(forResource: filename.replacingOccurrences(of: ".mp3", with: ""), withExtension: "mp3")
-            } else if let urlString = audioMaterial.url {
-                mockURL = URL(string: urlString)
-            } else {
-                mockURL = nil
-            }
+        if let filename = audioMaterial.filename {
+            // Try to load from bundle (will fail gracefully if file doesn't exist)
+            mockURL = Bundle.main.url(forResource: filename.replacingOccurrences(of: ".mp3", with: ""), withExtension: "mp3")
+        } else if let urlString = audioMaterial.url {
+            mockURL = URL(string: urlString)
+        } else {
+            mockURL = nil
+        }
 
-            // Since we don't have actual audio files, simulate loading
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                guard let self = self else { return }
+        // Simulate loading delay (background work)
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 
-                if let url = mockURL {
-                    self.setupPlayer(with: url, duration: audioMaterial.duration)
-                } else {
-                    // Mock playback for development
-                    self.setupMockPlayer(duration: audioMaterial.duration)
-                }
+        // Setup player on background thread
+        if let url = mockURL {
+            await setupPlayer(with: url, duration: audioMaterial.duration)
+        } else {
+            // Mock playback for development
+            await setupMockPlayer(duration: audioMaterial.duration)
+        }
 
-                self.isLoading = false
-            }
+        // Update UI state on main thread
+        await MainActor.run {
+            self.isLoading = false
         }
     }
 
-    private func setupPlayer(with url: URL, duration: TimeInterval) {
+    private func setupPlayer(with url: URL, duration: TimeInterval) async {
+        // Create player on background thread
         let playerItem = AVPlayerItem(url: url)
-        player = AVPlayer(playerItem: playerItem)
-        self.duration = duration
+        let newPlayer = AVPlayer(playerItem: playerItem)
 
-        addTimeObserver()
-        addPlayerObservers()
+        // Update UI state on main thread
+        await MainActor.run {
+            self.player = newPlayer
+            self.duration = duration
+            self.addTimeObserver()
+            self.addPlayerObservers()
+        }
     }
 
-    private func setupMockPlayer(duration: TimeInterval) {
+    private func setupMockPlayer(duration: TimeInterval) async {
         // For development without actual audio files
-        self.duration = duration
-        self.currentTime = 0
-        // Mock player is ready to "play"
+        await MainActor.run {
+            self.duration = duration
+            self.currentTime = 0
+            // Mock player is ready to "play"
+        }
     }
 
     private func addTimeObserver() {
@@ -108,63 +115,78 @@ class AudioPlayerManager: ObservableObject {
     }
 
     func play() {
-        if player != nil {
-            player?.play()
-            isPlaying = true
-        } else {
-            // Mock play for development
-            isPlaying = true
-            startMockPlayback()
+        Task { @MainActor in
+            if self.player != nil {
+                self.player?.play()
+                self.isPlaying = true
+            } else {
+                // Mock play for development
+                self.isPlaying = true
+                self.startMockPlayback()
+            }
         }
     }
 
     func pause() {
-        if player != nil {
-            player?.pause()
+        Task { @MainActor in
+            if self.player != nil {
+                self.player?.pause()
+            }
+            self.isPlaying = false
+            self.stopMockPlayback()
         }
-        isPlaying = false
-        stopMockPlayback()
     }
 
     func seekBackward(by seconds: TimeInterval = 10) {
-        let newTime = max(0, currentTime - seconds)
-        seek(to: newTime)
+        Task { @MainActor in
+            let newTime = max(0, self.currentTime - seconds)
+            self.seek(to: newTime)
+        }
     }
 
     func seekForward(by seconds: TimeInterval = 10) {
-        let newTime = min(duration, currentTime + seconds)
-        seek(to: newTime)
+        Task { @MainActor in
+            let newTime = min(self.duration, self.currentTime + seconds)
+            self.seek(to: newTime)
+        }
     }
 
     private func seek(to time: TimeInterval) {
-        if let player = player {
-            let cmTime = CMTime(seconds: time, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
-            player.seek(to: cmTime)
+        Task { @MainActor in
+            if let player = self.player {
+                let cmTime = CMTime(seconds: time, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+                player.seek(to: cmTime)
+            }
+            self.currentTime = time
         }
-        currentTime = time
     }
 
     func reset() {
-        if let timeObserver = timeObserver {
-            player?.removeTimeObserver(timeObserver)
+        Task { @MainActor in
+            if let timeObserver = self.timeObserver {
+                self.player?.removeTimeObserver(timeObserver)
+            }
+            self.stopMockPlayback()
+            self.player = nil
+            self.isPlaying = false
+            self.currentTime = 0
+            self.duration = 0
+            self.playbackError = nil
         }
-        stopMockPlayback()
-        player = nil
-        isPlaying = false
-        currentTime = 0
-        duration = 0
-        playbackError = nil
     }
 
     private func handlePlaybackEnded() {
-        isPlaying = false
-        currentTime = 0
-        player?.seek(to: .zero)
+        Task { @MainActor in
+            self.isPlaying = false
+            self.currentTime = 0
+            self.player?.seek(to: .zero)
+        }
     }
 
     // MARK: - Mock Playback (for development without audio files)
     private var mockPlaybackTimer: Timer?
 
+    @MainActor
     private func startMockPlayback() {
         mockPlaybackTimer?.invalidate()
         mockPlaybackTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
@@ -178,18 +200,20 @@ class AudioPlayerManager: ObservableObject {
         }
     }
 
+    @MainActor
     private func stopMockPlayback() {
         mockPlaybackTimer?.invalidate()
         mockPlaybackTimer = nil
     }
 
+    @MainActor
     private func handleMockPlaybackEnded() {
         stopMockPlayback()
         isPlaying = false
         currentTime = 0
     }
 
-//    deinit {
-//        reset()
-//    }
+    deinit {
+        reset()
+    }
 }

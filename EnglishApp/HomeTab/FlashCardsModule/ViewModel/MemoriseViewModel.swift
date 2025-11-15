@@ -11,22 +11,29 @@ import SwiftUI
 class MemoriseViewModel: ObservableObject {
     @Published var session: ReviewSession?
     @Published var showingStatistics = false
+    @Published var formattedTime: String = "0:00"
 
     private let storage = FlashCardStorage.shared
     private let groupID: UUID
+    private var timer: Timer?
 
     init(groupID: UUID) {
         self.groupID = groupID
-        startSession()
+        Task {
+            await startSession()
+        }
     }
 
-    func startSession() {
-        let cards = storage.getCards(for: groupID)
-        guard !cards.isEmpty else {
-            showingStatistics = true
-            return
+    func startSession() async {
+        let cards = await storage.getCards(for: groupID)
+        await MainActor.run {
+            guard !cards.isEmpty else {
+                self.showingStatistics = true
+                return
+            }
+            self.session = ReviewSession(groupID: self.groupID, cards: cards)
+            self.startTimer()
         }
-        session = ReviewSession(groupID: groupID, cards: cards)
     }
 
     func flipCard() {
@@ -45,19 +52,43 @@ class MemoriseViewModel: ObservableObject {
 
     private func checkSessionComplete() {
         if session?.isComplete == true {
+            stopTimer()
             showingStatistics = true
         }
     }
 
     func restartSession() {
         showingStatistics = false
-        startSession()
+        Task {
+            await startSession()
+        }
     }
 
-    var formattedTime: String {
-        guard let elapsed = session?.elapsedTime else { return "0:00" }
+    @MainActor
+    private func startTimer() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.updateFormattedTime()
+        }
+    }
+
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func updateFormattedTime() {
+        guard let elapsed = session?.elapsedTime else {
+            formattedTime = "0:00"
+            return
+        }
         let minutes = Int(elapsed) / 60
         let seconds = Int(elapsed) % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        formattedTime = String(format: "%d:%02d", minutes, seconds)
+    }
+
+    deinit {
+        timer?.invalidate()
+        timer = nil
     }
 }
