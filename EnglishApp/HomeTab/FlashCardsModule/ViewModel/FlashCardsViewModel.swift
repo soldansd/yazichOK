@@ -10,6 +10,7 @@ import SwiftUI
 
 class FlashCardsViewModel: ObservableObject {
     @Published var groups: [WordGroup] = []
+    @Published var cardCounts: [UUID: Int] = [:]
     @Published var showingAddGroup = false
 
     private let storage = FlashCardStorage.shared
@@ -22,8 +23,17 @@ class FlashCardsViewModel: ObservableObject {
 
     func loadGroups() async {
         let loadedGroups = await MainActor.run { storage.groups }
+
+        // Load card counts for all groups
+        var counts: [UUID: Int] = [:]
+        for group in loadedGroups {
+            let cards = await storage.getCards(for: group.id)
+            counts[group.id] = cards.count
+        }
+
         await MainActor.run {
             self.groups = loadedGroups
+            self.cardCounts = counts
         }
     }
 

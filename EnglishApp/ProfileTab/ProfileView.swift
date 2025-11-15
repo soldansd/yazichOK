@@ -59,7 +59,9 @@ struct ProfileView: View {
 
                     // Sign Out button
                     Button {
-                        authManager.signOut()
+                        Task {
+                            await authManager.signOut()
+                        }
                     } label: {
                         Text("Sign Out")
                             .font(.headline)

@@ -64,7 +64,9 @@ struct FlashCardsMainView: View {
             }
         }
         .onAppear {
-            viewModel.loadGroups()
+            Task {
+                await viewModel.loadGroups()
+            }
         }
     }
 
@@ -72,13 +74,15 @@ struct FlashCardsMainView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.groups) { group in
-                    WordGroupCardView(group: group, cardCount: viewModel.getCardCount(for: group.id))
+                    WordGroupCardView(group: group, cardCount: viewModel.cardCounts[group.id] ?? 0)
                         .onTapGesture {
                             coordinator.push(.memoriseWords(groupID: group.id))
                         }
                         .contextMenu {
                             Button(role: .destructive) {
-                                viewModel.deleteGroup(group)
+                                Task {
+                                    await viewModel.deleteGroup(group)
+                                }
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }

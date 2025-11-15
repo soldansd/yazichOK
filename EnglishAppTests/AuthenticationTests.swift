@@ -20,10 +20,9 @@ final class AuthenticationTests: XCTestCase {
         await authManager.signOut() // Clean state
     }
 
-    @MainActor
-    override func tearDown() {
-        authManager.signOut()
-        super.tearDown()
+    override func tearDown() async throws {
+        await authManager.signOut()
+        try await super.tearDown()
     }
 
     // MARK: - User Model Tests
@@ -76,147 +75,212 @@ final class AuthenticationTests: XCTestCase {
 
     // MARK: - Sign In Tests
 
-    func testSignInSuccess() {
+    func testSignInSuccess() async throws {
         // Given - using mock user (test@example.com / password123)
         let email = "test@example.com"
         let password = "password123"
 
         // When
-        XCTAssertNoThrow(try authManager.signIn(email: email, password: password))
+        try await authManager.signIn(email: email, password: password)
 
         // Then
-        XCTAssertTrue(authManager.isAuthenticated)
-        XCTAssertNotNil(authManager.currentUser)
-        XCTAssertEqual(authManager.currentUser?.email, email)
+        await MainActor.run {
+            XCTAssertTrue(authManager.isAuthenticated)
+            XCTAssertNotNil(authManager.currentUser)
+            XCTAssertEqual(authManager.currentUser?.email, email)
+        }
     }
 
-    func testSignInWithInvalidEmail() {
+    func testSignInWithInvalidEmail() async {
         // Given
         let email = "invalid-email"
         let password = "password123"
 
         // When/Then
-        XCTAssertThrowsError(try authManager.signIn(email: email, password: password)) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.invalidEmail)
+        do {
+            try await authManager.signIn(email: email, password: password)
+            XCTFail("Expected AuthError.invalidEmail to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.invalidEmail)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
-        XCTAssertNil(authManager.currentUser)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+            XCTAssertNil(authManager.currentUser)
+        }
     }
 
-    func testSignInWithEmptyFields() {
+    func testSignInWithEmptyFields() async {
         // When/Then - empty email
-        XCTAssertThrowsError(try authManager.signIn(email: "", password: "password")) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.emptyFields)
+        do {
+            try await authManager.signIn(email: "", password: "password")
+            XCTFail("Expected AuthError.emptyFields to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.emptyFields)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
         // When/Then - empty password
-        XCTAssertThrowsError(try authManager.signIn(email: "test@example.com", password: "")) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.emptyFields)
+        do {
+            try await authManager.signIn(email: "test@example.com", password: "")
+            XCTFail("Expected AuthError.emptyFields to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.emptyFields)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+        }
     }
 
-    func testSignInWithNonexistentUser() {
+    func testSignInWithNonexistentUser() async {
         // Given
         let email = "nonexistent@example.com"
         let password = "password123"
 
         // When/Then
-        XCTAssertThrowsError(try authManager.signIn(email: email, password: password)) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.userNotFound)
+        do {
+            try await authManager.signIn(email: email, password: password)
+            XCTFail("Expected AuthError.userNotFound to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.userNotFound)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+        }
     }
 
-    func testSignInWithIncorrectPassword() {
+    func testSignInWithIncorrectPassword() async {
         // Given - using mock user but wrong password
         let email = "test@example.com"
         let password = "wrongpassword"
 
         // When/Then
-        XCTAssertThrowsError(try authManager.signIn(email: email, password: password)) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.incorrectPassword)
+        do {
+            try await authManager.signIn(email: email, password: password)
+            XCTFail("Expected AuthError.incorrectPassword to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.incorrectPassword)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+        }
     }
 
-    func testSignInCaseInsensitiveEmail() {
+    func testSignInCaseInsensitiveEmail() async throws {
         // Given - test with different case
         let email = "TEST@EXAMPLE.COM"
         let password = "password123"
 
         // When
-        XCTAssertNoThrow(try authManager.signIn(email: email, password: password))
+        try await authManager.signIn(email: email, password: password)
 
         // Then
-        XCTAssertTrue(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertTrue(authManager.isAuthenticated)
+        }
     }
 
     // MARK: - Sign Up Tests
 
-    func testSignUpSuccess() {
+    func testSignUpSuccess() async throws {
         // Given
         let fullName = "New User"
         let email = "newuser@example.com"
         let password = "newpass123"
 
         // When
-        XCTAssertNoThrow(try authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: password))
+        try await authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: password)
 
         // Then
-        XCTAssertTrue(authManager.isAuthenticated)
-        XCTAssertNotNil(authManager.currentUser)
-        XCTAssertEqual(authManager.currentUser?.fullName, fullName)
-        XCTAssertEqual(authManager.currentUser?.email, email)
+        await MainActor.run {
+            XCTAssertTrue(authManager.isAuthenticated)
+            XCTAssertNotNil(authManager.currentUser)
+            XCTAssertEqual(authManager.currentUser?.fullName, fullName)
+            XCTAssertEqual(authManager.currentUser?.email, email)
+        }
     }
 
-    func testSignUpWithEmptyFields() {
+    func testSignUpWithEmptyFields() async {
         // When/Then - empty name
-        XCTAssertThrowsError(try authManager.signUp(fullName: "", email: "test@test.com", password: "pass123", confirmPassword: "pass123")) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.emptyFields)
+        do {
+            try await authManager.signUp(fullName: "", email: "test@test.com", password: "pass123", confirmPassword: "pass123")
+            XCTFail("Expected AuthError.emptyFields to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.emptyFields)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
         // When/Then - empty email
-        XCTAssertThrowsError(try authManager.signUp(fullName: "Name", email: "", password: "pass123", confirmPassword: "pass123")) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.emptyFields)
+        do {
+            try await authManager.signUp(fullName: "Name", email: "", password: "pass123", confirmPassword: "pass123")
+            XCTFail("Expected AuthError.emptyFields to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.emptyFields)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+        }
     }
 
-    func testSignUpWithInvalidEmail() {
+    func testSignUpWithInvalidEmail() async {
         // Given
         let fullName = "Test User"
         let email = "not-an-email"
         let password = "password123"
 
         // When/Then
-        XCTAssertThrowsError(try authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: password)) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.invalidEmail)
+        do {
+            try await authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: password)
+            XCTFail("Expected AuthError.invalidEmail to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.invalidEmail)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+        }
     }
 
-    func testSignUpWithShortPassword() {
+    func testSignUpWithShortPassword() async {
         // Given
         let fullName = "Test User"
         let email = "test@test.com"
         let password = "12345" // Less than 6 characters
 
         // When/Then
-        XCTAssertThrowsError(try authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: password)) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.invalidPassword)
+        do {
+            try await authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: password)
+            XCTFail("Expected AuthError.invalidPassword to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.invalidPassword)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+        }
     }
 
-    func testSignUpWithMismatchedPasswords() {
+    func testSignUpWithMismatchedPasswords() async {
         // Given
         let fullName = "Test User"
         let email = "test@test.com"
@@ -224,50 +288,70 @@ final class AuthenticationTests: XCTestCase {
         let confirmPassword = "different123"
 
         // When/Then
-        XCTAssertThrowsError(try authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword)) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.passwordsDoNotMatch)
+        do {
+            try await authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword)
+            XCTFail("Expected AuthError.passwordsDoNotMatch to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.passwordsDoNotMatch)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+        }
     }
 
-    func testSignUpWithExistingEmail() {
+    func testSignUpWithExistingEmail() async {
         // Given - using mock user email
         let fullName = "Another User"
         let email = "test@example.com" // Already exists
         let password = "password123"
 
         // When/Then
-        XCTAssertThrowsError(try authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: password)) { error in
-            XCTAssertEqual(error as? AuthError, AuthError.emailAlreadyExists)
+        do {
+            try await authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: password)
+            XCTFail("Expected AuthError.emailAlreadyExists to be thrown")
+        } catch let error as AuthError {
+            XCTAssertEqual(error, AuthError.emailAlreadyExists)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
 
-        XCTAssertFalse(authManager.isAuthenticated)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+        }
     }
 
     // MARK: - Sign Out Tests
 
-    func testSignOut() {
+    func testSignOut() async throws {
         // Given - sign in first
-        try? authManager.signIn(email: "test@example.com", password: "password123")
-        XCTAssertTrue(authManager.isAuthenticated)
+        try await authManager.signIn(email: "test@example.com", password: "password123")
+        await MainActor.run {
+            XCTAssertTrue(authManager.isAuthenticated)
+        }
 
         // When
-        authManager.signOut()
+        await authManager.signOut()
 
         // Then
-        XCTAssertFalse(authManager.isAuthenticated)
-        XCTAssertNil(authManager.currentUser)
+        await MainActor.run {
+            XCTAssertFalse(authManager.isAuthenticated)
+            XCTAssertNil(authManager.currentUser)
+        }
     }
 
     // MARK: - Auth State Persistence Tests
 
-    func testAuthStatePersistence() {
+    func testAuthStatePersistence() async throws {
         // Given - sign in
-        try? authManager.signIn(email: "test@example.com", password: "password123")
-        XCTAssertTrue(authManager.isAuthenticated)
+        try await authManager.signIn(email: "test@example.com", password: "password123")
+        await MainActor.run {
+            XCTAssertTrue(authManager.isAuthenticated)
+        }
 
-        let userEmail = authManager.currentUser?.email
+        let userEmail = await MainActor.run { authManager.currentUser?.email }
 
         // When - create new instance (simulating app restart)
         // Note: In real app, this would be a new instance, but with shared singleton we can test persistence
@@ -279,7 +363,7 @@ final class AuthenticationTests: XCTestCase {
         XCTAssertNotNil(userData)
 
         // Cleanup
-        authManager.signOut()
+        await authManager.signOut()
     }
 
     // MARK: - ViewModel Tests

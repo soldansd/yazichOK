@@ -175,63 +175,67 @@ final class FlashCardsTests: XCTestCase {
         XCTAssertTrue(FlashCardStorage.shared === FlashCardStorage.shared)
     }
 
-    func testAddGroup() {
+    func testAddGroup() async {
         // Given
         let storage = FlashCardStorage.shared
-        let initialCount = storage.groups.count
+        let initialCount = await MainActor.run { storage.groups.count }
         let newGroup = WordGroup(name: "Test Group")
 
         // When
-        storage.addGroup(newGroup)
+        await storage.addGroup(newGroup)
 
         // Then
-        XCTAssertEqual(storage.groups.count, initialCount + 1)
-        XCTAssertTrue(storage.groups.contains(where: { $0.id == newGroup.id }))
+        await MainActor.run {
+            XCTAssertEqual(storage.groups.count, initialCount + 1)
+            XCTAssertTrue(storage.groups.contains(where: { $0.id == newGroup.id }))
+        }
 
         // Cleanup
-        storage.deleteGroup(newGroup.id)
+        await storage.deleteGroup(newGroup.id)
     }
 
-    func testAddCard() {
+    func testAddCard() async {
         // Given
         let storage = FlashCardStorage.shared
         let group = WordGroup(name: "Test Group")
-        storage.addGroup(group)
+        await storage.addGroup(group)
 
-        let initialCount = storage.cards.count
+        let initialCount = await MainActor.run { storage.cards.count }
         let newCard = FlashCard(word: "Test", translation: "Тест", groupID: group.id)
 
         // When
-        storage.addCard(newCard)
+        await storage.addCard(newCard)
 
         // Then
-        XCTAssertEqual(storage.cards.count, initialCount + 1)
-        XCTAssertTrue(storage.cards.contains(where: { $0.id == newCard.id }))
+        await MainActor.run {
+            XCTAssertEqual(storage.cards.count, initialCount + 1)
+            XCTAssertTrue(storage.cards.contains(where: { $0.id == newCard.id }))
+        }
 
         // Cleanup
-        storage.deleteCard(newCard.id)
-        storage.deleteGroup(group.id)
+        await storage.deleteCard(newCard.id)
+        await storage.deleteGroup(group.id)
     }
 
-    func testGetCardsForGroup() {
+    func testGetCardsForGroup() async {
         // Given
         let storage = FlashCardStorage.shared
         let group1 = WordGroup(name: "Group 1")
         let group2 = WordGroup(name: "Group 2")
-        storage.addGroup(group1)
-        storage.addGroup(group2)
+        await storage.addGroup(group1)
+        await storage.addGroup(group2)
 
         let card1 = FlashCard(word: "Test1", translation: "Тест1", groupID: group1.id)
         let card2 = FlashCard(word: "Test2", translation: "Тест2", groupID: group1.id)
         let card3 = FlashCard(word: "Test3", translation: "Тест3", groupID: group2.id)
 
-        storage.addCard(card1)
-        storage.addCard(card2)
-        storage.addCard(card3)
+        await storage.addCard(card1)
+        await storage.addCard(card2)
+        await storage.addCard(card3)
 
         // When
-        let group1Cards = storage.getCards(for: group1.id)
-        let group2Cards = storage.getCards(for: group2.id)
+        let group1Cards = await storage.getCards(for: group1.id)
+        let group2Cards = await storage.getCards(for: group2.id)
 
         // Then
         XCTAssertEqual(group1Cards.count, 2)
@@ -241,74 +245,76 @@ final class FlashCardsTests: XCTestCase {
         XCTAssertTrue(group2Cards.contains(where: { $0.id == card3.id }))
 
         // Cleanup
-        storage.deleteCard(card1.id)
-        storage.deleteCard(card2.id)
-        storage.deleteCard(card3.id)
-        storage.deleteGroup(group1.id)
-        storage.deleteGroup(group2.id)
+        await storage.deleteCard(card1.id)
+        await storage.deleteCard(card2.id)
+        await storage.deleteCard(card3.id)
+        await storage.deleteGroup(group1.id)
+        await storage.deleteGroup(group2.id)
     }
 
-    func testDeleteGroup() {
+    func testDeleteGroup() async {
         // Given
         let storage = FlashCardStorage.shared
         let group = WordGroup(name: "Test Group")
-        storage.addGroup(group)
+        await storage.addGroup(group)
 
         let card = FlashCard(word: "Test", translation: "Тест", groupID: group.id)
-        storage.addCard(card)
+        await storage.addCard(card)
 
         // When
-        storage.deleteGroup(group.id)
+        await storage.deleteGroup(group.id)
 
         // Then
-        XCTAssertFalse(storage.groups.contains(where: { $0.id == group.id }))
-        XCTAssertFalse(storage.cards.contains(where: { $0.groupID == group.id }))
+        await MainActor.run {
+            XCTAssertFalse(storage.groups.contains(where: { $0.id == group.id }))
+            XCTAssertFalse(storage.cards.contains(where: { $0.groupID == group.id }))
+        }
     }
 
-    func testGetNewCardsCount() {
+    func testGetNewCardsCount() async {
         // Given
         let storage = FlashCardStorage.shared
         let group = WordGroup(name: "Test Group")
-        storage.addGroup(group)
+        await storage.addGroup(group)
 
         let newCard = FlashCard(word: "New", translation: "Новый", groupID: group.id, isNew: true)
         let oldCard = FlashCard(word: "Old", translation: "Старый", groupID: group.id, isNew: false)
 
-        storage.addCard(newCard)
-        storage.addCard(oldCard)
+        await storage.addCard(newCard)
+        await storage.addCard(oldCard)
 
-        let initialNewCount = storage.getNewCardsCount()
+        let initialNewCount = await MainActor.run { storage.getNewCardsCount() }
 
         // Then
         XCTAssertGreaterThanOrEqual(initialNewCount, 1)
 
         // Cleanup
-        storage.deleteCard(newCard.id)
-        storage.deleteCard(oldCard.id)
-        storage.deleteGroup(group.id)
+        await storage.deleteCard(newCard.id)
+        await storage.deleteCard(oldCard.id)
+        await storage.deleteGroup(group.id)
     }
 
-    func testGetReviewCardsCount() {
+    func testGetReviewCardsCount() async {
         // Given
         let storage = FlashCardStorage.shared
         let group = WordGroup(name: "Test Group")
-        storage.addGroup(group)
+        await storage.addGroup(group)
 
         let reviewCard = FlashCard(word: "Review", translation: "Обзор", groupID: group.id, needsReview: true)
         let normalCard = FlashCard(word: "Normal", translation: "Обычный", groupID: group.id, needsReview: false)
 
-        storage.addCard(reviewCard)
-        storage.addCard(normalCard)
+        await storage.addCard(reviewCard)
+        await storage.addCard(normalCard)
 
-        let initialReviewCount = storage.getReviewCardsCount()
+        let initialReviewCount = await MainActor.run { storage.getReviewCardsCount() }
 
         // Then
         XCTAssertGreaterThanOrEqual(initialReviewCount, 1)
 
         // Cleanup
-        storage.deleteCard(reviewCard.id)
-        storage.deleteCard(normalCard.id)
-        storage.deleteGroup(group.id)
+        await storage.deleteCard(reviewCard.id)
+        await storage.deleteCard(normalCard.id)
+        await storage.deleteGroup(group.id)
     }
 
     // MARK: - AddWordViewModel Tests
