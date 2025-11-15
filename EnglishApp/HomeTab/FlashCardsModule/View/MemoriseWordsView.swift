@@ -12,6 +12,7 @@ struct MemoriseWordsView: View {
     @EnvironmentObject var coordinator: HomeCoordinator
     @StateObject private var viewModel: MemoriseViewModel
     @State private var cardRotation: Double = 0
+    @State private var textOpacity: Double = 1.0
 
     init(groupID: UUID) {
         _viewModel = StateObject(wrappedValue: MemoriseViewModel(groupID: groupID))
@@ -80,9 +81,24 @@ struct MemoriseWordsView: View {
                         axis: (x: 0, y: 1, z: 0)
                     )
                     .onTapGesture {
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                            viewModel.flipCard()
-                            cardRotation = cardRotation == 0 ? 180 : 0
+                        // Hide text first
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            textOpacity = 0
+                        }
+
+                        // Rotate card and flip data after text fades out
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                viewModel.flipCard()
+                                cardRotation = cardRotation == 0 ? 180 : 0
+                            }
+
+                            // Show text after rotation starts
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                withAnimation(.easeIn(duration: 0.2)) {
+                                    textOpacity = 1
+                                }
+                            }
                         }
                     }
             }
@@ -95,6 +111,7 @@ struct MemoriseWordsView: View {
                     withAnimation {
                         viewModel.markAsUnknown()
                         cardRotation = 0
+                        textOpacity = 1.0
                     }
                 } label: {
                     HStack {
@@ -113,6 +130,7 @@ struct MemoriseWordsView: View {
                     withAnimation {
                         viewModel.markAsKnown()
                         cardRotation = 0
+                        textOpacity = 1.0
                     }
                 } label: {
                     HStack {
@@ -192,6 +210,7 @@ struct MemoriseWordsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    .opacity(textOpacity)
 
                     Spacer()
 
@@ -203,6 +222,7 @@ struct MemoriseWordsView: View {
                     }
                     .font(.subheadline)
                     .padding(.bottom)
+                    .opacity(textOpacity)
                 } else {
                     // Back side
                     VStack(spacing: 16) {
@@ -218,6 +238,7 @@ struct MemoriseWordsView: View {
                                 .padding(.horizontal)
                         }
                     }
+                    .opacity(textOpacity)
 
                     Spacer()
                 }
