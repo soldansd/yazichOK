@@ -9,10 +9,12 @@ import XCTest
 import SwiftUI
 @testable import EnglishApp
 
+@MainActor
 final class AuthenticationTests: XCTestCase {
 
     var authManager: MockAuthManager!
 
+    @MainActor
     override func setUp() {
         super.setUp()
         // Note: Using shared instance, so we need to clean up state
@@ -20,6 +22,7 @@ final class AuthenticationTests: XCTestCase {
         authManager.signOut() // Clean state
     }
 
+    @MainActor
     override func tearDown() {
         authManager.signOut()
         super.tearDown()

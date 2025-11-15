@@ -11,8 +11,19 @@
 		A97EAD762DAC3D6000D8C014 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = A97EAD752DAC3D6000D8C014 /* Lottie */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		A9C6820F2EC8B7E10077CE5A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A981769C2D96D4E5002CD6EA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A98176A32D96D4E5002CD6EA;
+			remoteInfo = EnglishApp;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		A98176A42D96D4E5002CD6EA /* EnglishApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EnglishApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A9C6820B2EC8B7E10077CE5A /* EnglishAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EnglishAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -24,6 +35,11 @@
 		A98176A62D96D4E5002CD6EA /* EnglishApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = EnglishApp;
+			sourceTree = "<group>";
+		};
+		A9C6820C2EC8B7E10077CE5A /* EnglishAppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = EnglishAppTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -38,6 +54,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A9C682082EC8B7E10077CE5A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -46,6 +69,7 @@
 			children = (
 				A97EAD712DAC3CB400D8C014 /* Animations */,
 				A98176A62D96D4E5002CD6EA /* EnglishApp */,
+				A9C6820C2EC8B7E10077CE5A /* EnglishAppTests */,
 				A98176A52D96D4E5002CD6EA /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				A98176A42D96D4E5002CD6EA /* EnglishApp.app */,
+				A9C6820B2EC8B7E10077CE5A /* EnglishAppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -86,6 +111,29 @@
 			productReference = A98176A42D96D4E5002CD6EA /* EnglishApp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A9C6820A2EC8B7E10077CE5A /* EnglishAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A9C682132EC8B7E10077CE5A /* Build configuration list for PBXNativeTarget "EnglishAppTests" */;
+			buildPhases = (
+				A9C682072EC8B7E10077CE5A /* Sources */,
+				A9C682082EC8B7E10077CE5A /* Frameworks */,
+				A9C682092EC8B7E10077CE5A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A9C682102EC8B7E10077CE5A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A9C6820C2EC8B7E10077CE5A /* EnglishAppTests */,
+			);
+			name = EnglishAppTests;
+			packageProductDependencies = (
+			);
+			productName = EnglishAppTests;
+			productReference = A9C6820B2EC8B7E10077CE5A /* EnglishAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -93,11 +141,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					A98176A32D96D4E5002CD6EA = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					A9C6820A2EC8B7E10077CE5A = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = A98176A32D96D4E5002CD6EA;
 					};
 				};
 			};
@@ -120,12 +172,20 @@
 			projectRoot = "";
 			targets = (
 				A98176A32D96D4E5002CD6EA /* EnglishApp */,
+				A9C6820A2EC8B7E10077CE5A /* EnglishAppTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		A98176A22D96D4E5002CD6EA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9C682092EC8B7E10077CE5A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -142,7 +202,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A9C682072EC8B7E10077CE5A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A9C682102EC8B7E10077CE5A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A98176A32D96D4E5002CD6EA /* EnglishApp */;
+			targetProxy = A9C6820F2EC8B7E10077CE5A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A98176B02D96D4E7002CD6EA /* Debug */ = {
@@ -326,6 +401,50 @@
 			};
 			name = Release;
 		};
+		A9C682112EC8B7E10077CE5A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4RQ5G2BLCM;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = daniilsolovyev.EnglishAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EnglishApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EnglishApp";
+			};
+			name = Debug;
+		};
+		A9C682122EC8B7E10077CE5A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4RQ5G2BLCM;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = daniilsolovyev.EnglishAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EnglishApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EnglishApp";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -343,6 +462,15 @@
 			buildConfigurations = (
 				A98176B32D96D4E7002CD6EA /* Debug */,
 				A98176B42D96D4E7002CD6EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A9C682132EC8B7E10077CE5A /* Build configuration list for PBXNativeTarget "EnglishAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A9C682112EC8B7E10077CE5A /* Debug */,
+				A9C682122EC8B7E10077CE5A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

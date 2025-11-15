@@ -45,10 +45,11 @@ struct FlashCardsMainView: View {
                 }
             }
         }
+        .navigationBarBackButtonHidden()
         .navigationTitle("Flashcards")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     coordinator.push(.addNewWord)
                 } label: {
@@ -58,7 +59,7 @@ struct FlashCardsMainView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 BackButtonToolbar()
             }
         }

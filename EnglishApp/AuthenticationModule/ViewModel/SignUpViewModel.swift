@@ -33,7 +33,7 @@ class SignUpViewModel: ObservableObject {
         }
 
         do {
-            try authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword)
+            try await authManager.signUp(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword)
             await MainActor.run {
                 isLoading = false
             }

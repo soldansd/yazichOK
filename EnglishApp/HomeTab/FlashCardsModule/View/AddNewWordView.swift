@@ -143,6 +143,7 @@ struct AddNewWordView: View {
                 .padding()
             }
         }
+        .navigationBarBackButtonHidden()
         .navigationTitle("New Word")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

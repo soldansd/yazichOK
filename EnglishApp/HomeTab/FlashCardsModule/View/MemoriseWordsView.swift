@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct MemoriseWordsView: View {
+    @Environment(\.dismiss) var dismiss
     @EnvironmentObject var coordinator: HomeCoordinator
     @StateObject private var viewModel: MemoriseViewModel
     @State private var cardRotation: Double = 0
@@ -28,10 +29,11 @@ struct MemoriseWordsView: View {
                 reviewContent
             }
         }
+        .navigationBarBackButtonHidden()
         .navigationTitle("Words Review")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 BackButtonToolbar()
             }
         }

@@ -8,10 +8,17 @@
 import SwiftUI
 
 struct BackButtonToolbar: View {
-    let action: () -> Void
+    var dismissAction: (() -> Void)? = nil
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        Button(action: action) {
+        Button {
+            if let dismissAction {
+                dismissAction()
+            } else {
+                dismiss()
+            }
+        } label: {
             Image(systemName: "chevron.left")
                 .bold()
         }
@@ -19,5 +26,5 @@ struct BackButtonToolbar: View {
 }
 
 #Preview {
-    BackButtonToolbar {}
+    BackButtonToolbar()
 }

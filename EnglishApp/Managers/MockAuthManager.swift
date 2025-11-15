@@ -37,6 +37,7 @@ enum AuthError: LocalizedError {
     }
 }
 
+@MainActor
 final class MockAuthManager: ObservableObject {
     static let shared = MockAuthManager()
 

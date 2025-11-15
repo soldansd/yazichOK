@@ -27,7 +27,7 @@ class SignInViewModel: ObservableObject {
         }
 
         do {
-            try authManager.signIn(email: email, password: password)
+            try await authManager.signIn(email: email, password: password)
             await MainActor.run {
                 isLoading = false
             }

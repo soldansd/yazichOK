@@ -50,10 +50,11 @@ struct AddNewWordsGroupView: View {
             }
             .padding(.top)
         }
+        .navigationBarBackButtonHidden()
         .navigationTitle("New Group")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 BackButtonToolbar()
             }
         }
