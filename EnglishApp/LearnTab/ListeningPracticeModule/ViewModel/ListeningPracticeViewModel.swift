@@ -41,7 +41,9 @@ class ListeningPracticeViewModel: ObservableObject {
         guard !audio.isLocked else { return }
 
         currentAudio = audio
-        audioPlayer.loadAudio(audio)
+        Task {
+            await audioPlayer.loadAudio(audio)
+        }
     }
 
     func togglePlayPause() {
