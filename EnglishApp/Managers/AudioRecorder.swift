@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 
+@MainActor
 final class AudioRecorder {
     
     static let shared = AudioRecorder()

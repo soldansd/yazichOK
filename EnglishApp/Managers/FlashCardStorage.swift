@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 final class FlashCardStorage: ObservableObject {
     static let shared = FlashCardStorage()
 

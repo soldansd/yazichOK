@@ -82,7 +82,7 @@ struct MemoriseWordsView: View {
                     .onTapGesture {
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                             viewModel.flipCard()
-                            cardRotation += 180
+                            cardRotation = cardRotation == 0 ? 180 : 0
                         }
                     }
             }

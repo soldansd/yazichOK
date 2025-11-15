@@ -54,8 +54,8 @@ struct TestQuestionCard: View {
                 Spacer()
 
                 if hasCheckedAnswer && index == selectedAnswerIndex {
-                    Image(systemName: "checkmark")
-                        .foregroundStyle(.green)
+                    Image(systemName: isAnswerCorrect ? "checkmark" : "xmark")
+                        .foregroundStyle(isAnswerCorrect ? .green : .red)
                 }
             }
             .padding()
@@ -76,14 +76,14 @@ struct TestQuestionCard: View {
 
     private func backgroundColor(for index: Int) -> Color {
         if hasCheckedAnswer && isSelected(index) {
-            return isAnswerCorrect ? .green.opacity(0.1) : .white
+            return isAnswerCorrect ? .green.opacity(0.1) : .red.opacity(0.1)
         }
         return isSelected(index) ? .green.opacity(0.05) : .white
     }
 
     private func borderColor(for index: Int) -> Color {
         if hasCheckedAnswer && isSelected(index) {
-            return isAnswerCorrect ? .green : .gray.opacity(0.3)
+            return isAnswerCorrect ? .green : .red
         }
         return isSelected(index) ? .green : .gray.opacity(0.3)
     }
