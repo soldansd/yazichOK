@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class AddWordViewModel: ObservableObject {
     @Published var word = ""
     @Published var translation = ""

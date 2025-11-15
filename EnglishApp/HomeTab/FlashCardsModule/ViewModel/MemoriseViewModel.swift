@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class MemoriseViewModel: ObservableObject {
     @Published var session: ReviewSession?
     @Published var showingStatistics = false

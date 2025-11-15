@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class FlashCardsViewModel: ObservableObject {
     @Published var groups: [WordGroup] = []
     @Published var showingAddGroup = false
