@@ -24,6 +24,7 @@ class ListeningPracticeViewModel: ObservableObject {
 
     private func loadAudioMaterials() {
         audioMaterials = AudioMaterial.mockAudioMaterials
+        upcomingAudio = audioMaterials
 
         // Auto-select first unlocked audio
         if let firstAudio = audioMaterials.first(where: { !$0.isLocked }) {
@@ -41,22 +42,6 @@ class ListeningPracticeViewModel: ObservableObject {
 
         currentAudio = audio
         audioPlayer.loadAudio(audio)
-        updateUpcomingAudio()
-    }
-
-    private func updateUpcomingAudio() {
-        guard let current = currentAudio else {
-            upcomingAudio = audioMaterials
-            return
-        }
-
-        // Get all audio after the current one
-        if let currentIndex = audioMaterials.firstIndex(where: { $0.id == current.id }) {
-            let afterCurrent = audioMaterials.suffix(from: min(currentIndex + 1, audioMaterials.count))
-            upcomingAudio = Array(afterCurrent)
-        } else {
-            upcomingAudio = audioMaterials.filter { $0.id != current.id }
-        }
     }
 
     func togglePlayPause() {

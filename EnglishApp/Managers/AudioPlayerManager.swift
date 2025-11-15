@@ -189,7 +189,7 @@ class AudioPlayerManager: ObservableObject {
         currentTime = 0
     }
 
-    deinit {
-        reset()
-    }
+//    deinit {
+//        reset()
+//    }
 }

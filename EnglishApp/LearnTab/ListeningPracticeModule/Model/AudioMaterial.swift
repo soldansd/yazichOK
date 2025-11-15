@@ -50,38 +50,38 @@ extension AudioMaterial {
     static let mockAudioMaterials: [AudioMaterial] = [
         AudioMaterial(
             id: "business-meeting",
-            title: "Business Meeting Discussion",
-            filename: "business_meeting.mp3",
-            duration: 225, // 3:45
+            title: "A special restaurant",
+            filename: "Audio_zone-A_special_restaurant.mp3",
+            duration: 241,
             difficulty: .intermediate,
             isLocked: false,
             category: "Business"
         ),
         AudioMaterial(
             id: "job-interview",
-            title: "Job Interview Practice",
-            filename: "job_interview.mp3",
-            duration: 270, // 4:30
+            title: "Study trip UK",
+            filename: "Audio_zone_study_trip_UK.mp3",
+            duration: 227,
             difficulty: .intermediate,
-            isLocked: true,
+            isLocked: false,
             category: "Business"
         ),
         AudioMaterial(
             id: "daily-news",
-            title: "Daily News Report",
-            filename: "daily_news.mp3",
-            duration: 165, // 2:45
+            title: "London life",
+            filename: "Audio_zone-London_life.mp3",
+            duration: 198,
             difficulty: .advanced,
-            isLocked: true,
+            isLocked: false,
             category: "News"
         ),
         AudioMaterial(
             id: "casual-conversation",
-            title: "Casual Conversation",
-            filename: "casual_conversation.mp3",
-            duration: 195, // 3:15
+            title: "Marathon running",
+            filename: "Audio_zone-Marathon_running.mp3",
+            duration: 237,
             difficulty: .beginner,
-            isLocked: true,
+            isLocked: false,
             category: "Conversation"
         ),
         AudioMaterial(
