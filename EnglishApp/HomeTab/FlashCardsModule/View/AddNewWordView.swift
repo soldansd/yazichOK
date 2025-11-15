@@ -176,8 +176,10 @@ struct AddNewWordView: View {
 
     private func saveWord() {
         guard viewModel.isValid else { return }
-        viewModel.saveCard()
-        coordinator.pop()
+        Task {
+            await viewModel.saveCard()
+            coordinator.pop()
+        }
     }
 }
 

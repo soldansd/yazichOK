@@ -91,16 +91,14 @@ final class FlashCardStorage: ObservableObject {
         }
     }
 
-    func getNewCardsCount() async -> Int {
-        await MainActor.run {
-            self.cards.filter { $0.isNew }.count
-        }
+    @MainActor
+    func getNewCardsCount() -> Int {
+        self.cards.filter { $0.isNew }.count
     }
 
-    func getReviewCardsCount() async -> Int {
-        await MainActor.run {
-            self.cards.filter { $0.needsReview }.count
-        }
+    @MainActor
+    func getReviewCardsCount() -> Int {
+        self.cards.filter { $0.needsReview }.count
     }
 
     // MARK: - Persistence

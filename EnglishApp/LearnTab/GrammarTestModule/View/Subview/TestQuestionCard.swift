@@ -78,14 +78,14 @@ struct TestQuestionCard: View {
         if hasCheckedAnswer && isSelected(index) {
             return isAnswerCorrect ? .green.opacity(0.1) : .red.opacity(0.1)
         }
-        return isSelected(index) ? .green.opacity(0.05) : .white
+        return isSelected(index) ? .blue.opacity(0.05) : .white
     }
 
     private func borderColor(for index: Int) -> Color {
         if hasCheckedAnswer && isSelected(index) {
             return isAnswerCorrect ? .green : .red
         }
-        return isSelected(index) ? .green : .gray.opacity(0.3)
+        return isSelected(index) ? .blue : .gray.opacity(0.3)
     }
 
     private func textColor(for index: Int) -> Color {
