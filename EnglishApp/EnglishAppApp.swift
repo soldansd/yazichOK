@@ -11,9 +11,7 @@ import SwiftUI
 struct EnglishAppApp: App {
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                HomeView()
-            }
+            MainTabView()
         }
     }
 }
