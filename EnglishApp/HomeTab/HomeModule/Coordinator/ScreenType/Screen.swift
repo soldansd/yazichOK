@@ -14,4 +14,8 @@ enum Screen: Hashable {
     case articlesPreview
     case article(id: Int)
     case articleAnalisis(Article)
+    case flashCards
+    case addNewWord
+    case addNewWordsGroup
+    case memoriseWords(groupID: UUID)
 }
