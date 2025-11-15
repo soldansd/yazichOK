@@ -108,7 +108,7 @@ struct LearnView: View {
                     }
 
                 case .listeningPractice:
-                    Text("Listening Practice - Coming Soon")
+                    ListeningPracticeView()
                         .environmentObject(learnCoordinator)
                 }
             }
