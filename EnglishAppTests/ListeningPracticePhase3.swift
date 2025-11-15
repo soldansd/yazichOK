@@ -93,15 +93,10 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-
-        XCTAssertTrue(player.isLoading)
-        XCTAssertEqual(player.currentAudio?.id, audio.id)
-
-        // Wait for loading to complete
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
 
         XCTAssertFalse(player.isLoading)
+        XCTAssertEqual(player.currentAudio?.id, audio.id)
         XCTAssertEqual(player.duration, audio.duration)
     }
 
@@ -109,15 +104,16 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
 
         XCTAssertFalse(player.isPlaying)
 
         player.play()
+        try? await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertTrue(player.isPlaying)
 
         player.pause()
+        try? await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertFalse(player.isPlaying)
     }
 
@@ -125,8 +121,7 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
 
         // Manually set current time
         player.play()
@@ -134,6 +129,7 @@ final class ListeningPracticePhase3: XCTestCase {
 
         let timeBefore = player.currentTime
         player.seekBackward(by: 10)
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertLessThan(player.currentTime, timeBefore)
     }
@@ -142,11 +138,11 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
 
         let timeBefore = player.currentTime
         player.seekForward(by: 10)
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertGreaterThanOrEqual(player.currentTime, timeBefore)
     }
@@ -155,11 +151,12 @@ final class ListeningPracticePhase3: XCTestCase {
         let player = AudioPlayerManager.shared
         let audio = AudioMaterial.mockAudioMaterials[0]
 
-        player.loadAudio(audio)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio)
         player.play()
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         player.reset()
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertFalse(player.isPlaying)
         XCTAssertEqual(player.currentTime, 0)
@@ -357,13 +354,11 @@ final class ListeningPracticePhase3: XCTestCase {
         let audio1 = AudioMaterial.mockAudioMaterials[0]
         let audio2 = AudioMaterial.mockAudioMaterials[4]
 
-        player.loadAudio(audio1)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio1)
 
         XCTAssertEqual(player.currentAudio?.id, audio1.id)
 
-        player.loadAudio(audio2)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await player.loadAudio(audio2)
 
         XCTAssertEqual(player.currentAudio?.id, audio2.id)
         XCTAssertFalse(player.isPlaying) // Should reset when loading new audio
