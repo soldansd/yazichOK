@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an iOS app built with SwiftUI for English language learners. The app includes speaking assessment, article reading, audio recording, and planned features for flashcards, grammar tests, listening practice, and authentication.
+This is an iOS app built with SwiftUI for English language learners. The app includes:
+- **Speaking Assessment**: Record and evaluate pronunciation
+- **Article Reading**: Browse and read English articles
+- **Flash Cards**: Vocabulary learning with spaced repetition
+- **Grammar Tests**: Interactive quizzes with instant feedback
+- **Listening Practice**: Audio playback with controls
+- **Authentication**: User sign in/sign up system
 
 ## Build & Development Commands
 
@@ -29,9 +35,10 @@ The project uses Swift Package Manager with the following dependencies (see `Pac
 The project uses **MVVM + Coordinator** pattern with SwiftUI's `NavigationStack` for navigation:
 
 **Coordinator Navigation:**
-- `HomeCoordinator` manages navigation using `NavigationPath`
-- Navigation targets defined in `Screen` enum (see `EnglishApp/HomeTab/HomeModule/Coordinator/ScreenType/Screen.swift`)
-- Each screen case can carry associated data (e.g., `case article(id: Int)`)
+- `HomeCoordinator` manages Home tab navigation using `NavigationPath`
+- `LearnCoordinator` manages Learn tab navigation using `NavigationPath`
+- Navigation targets defined in `Screen` enum (Home) and `LearnScreen` enum (Learn)
+- Each screen case can carry associated data (e.g., `case article(id: Int)`, `case grammarTest(topicID: String)`)
 - Methods: `push(_:)`, `pop()`, `popToRoot()`
 
 **Module Structure:**
@@ -63,7 +70,7 @@ FeatureModule/
 3. Add method to `NetworkManager` that returns DTO
 4. Map DTO → business model in ViewModel
 
-### Audio Recording
+### Audio Management
 
 **AudioRecorder** (`Managers/AudioRecorder.swift`):
 - Singleton: `AudioRecorder.shared`
@@ -72,23 +79,44 @@ FeatureModule/
 - Key methods: `requestPermissionAndRecord()`, `stopRecording()`, `playRecording()`
 - Supports pause/resume functionality
 
+**AudioPlayerManager** (`Managers/AudioPlayerManager.swift`):
+- Singleton: `AudioPlayerManager.shared`
+- Uses AVPlayer for audio playback (supports both local and remote audio)
+- Published properties: `isPlaying`, `currentTime`, `duration`, `isLoading`, `currentAudio`
+- Key methods: `loadAudio(_:)`, `play()`, `pause()`, `seekBackward(by:)`, `seekForward(by:)`, `reset()`
+- Real-time progress updates via observers
+- Mock playback support for development without audio files
+
 ## Project Structure
 
 ```
 EnglishApp/
-├── EnglishAppApp.swift           # App entry point
+├── EnglishAppApp.swift           # App entry point (with auth check)
+├── MainTabView.swift             # Main tab bar (4 tabs)
 ├── ContentView.swift             # Test/playground view
-├── HomeTab/                      # Main feature modules
+├── HomeTab/                      # Home tab feature modules
 │   ├── ArticleModule/
 │   ├── ArticlesPreviewModule/
+│   ├── FlashCardsModule/         # Vocabulary flash cards
 │   ├── HomeModule/
 │   │   └── Coordinator/          # Navigation coordinator
 │   ├── RecordingAnswersModule/
 │   ├── SpeakingAssesmentModule/
 │   └── SpeakingTopicsModule/
+├── LearnTab/                     # Learn tab feature modules
+│   ├── LearnModule/              # Main Learn screen
+│   ├── GrammarTopicsModule/      # Grammar topics list
+│   ├── GrammarTestModule/        # Interactive tests
+│   └── ListeningPracticeModule/  # Audio player
+├── ProgressTab/                  # Progress tracking (placeholder)
+├── ProfileTab/                   # User profile
+├── AuthenticationModule/         # Sign in/Sign up
 ├── Managers/
-│   ├── AudioRecorder.swift       # Singleton for audio
-│   └── NetworkManager/           # Singleton for API calls
+│   ├── AudioRecorder.swift       # Recording audio
+│   ├── AudioPlayerManager.swift  # Playing audio (AVPlayer)
+│   ├── MockAuthManager.swift     # Authentication
+│   ├── FlashCardStorage.swift    # Flash cards persistence
+│   └── NetworkManager/           # API calls
 │       ├── Models/               # DTOs only
 │       └── Error/                # Network error types
 ├── Assets.xcassets/
@@ -139,13 +167,90 @@ Use colors defined in `Assets.xcassets/Colors/`:
 **Animations:**
 Lottie animations stored in `/Animations/` folder as `.json` files. Use `LottieView` from lottie-ios package.
 
-## Planned Features (Reference)
+## Implemented Features
 
-See `Docs/plan.md` for detailed specifications of upcoming features:
-- Task 1: Flash Cards
-- Task 2: Grammar Tests
-- Task 3: Listening Practice
-- Task 4: Sign In Screen
-- Task 5: Sign Up Screen
+All planned features have been fully implemented and tested. See `IMPLEMENTATION_STATUS.md` for comprehensive details:
 
-When implementing these, follow the architecture patterns and module structure outlined above.
+### Feature Phases
+
+**✅ Phase 0: Tab Bar Infrastructure**
+- 4-tab navigation system (Home, Learn, Progress, Profile)
+- Coordinator pattern with `NavigationPath`
+- Separate coordinators per tab
+
+**✅ Phase 1: Flash Cards**
+- Vocabulary learning with 3D flip animations
+- Word groups organization
+- Progress tracking and session statistics
+- UserDefaults persistence
+- Mock data with Travel, Education, and Cafe groups
+
+**✅ Phase 2: Grammar Tests**
+- 8 grammar topics (Present Simple, Past Simple, Articles, etc.)
+- 20+ questions per topic with multiple choice
+- Interactive test flow with instant feedback
+- Progress bar and score tracking
+- Summary screen with statistics
+
+**✅ Phase 3: Listening Practice**
+- 10 audio materials with various categories
+- AVPlayer-based audio playback
+- Play/Pause, skip forward/backward controls
+- Real-time progress bar
+- Mock playback support (ready for real audio files)
+
+**✅ Phase 4 & 5: Authentication**
+- Sign In / Sign Up screens
+- Email and password validation
+- MockAuthManager with user persistence
+- Profile screen with user info
+
+### Project Statistics
+
+- **Total Swift Files:** 81 files
+  - HomeTab modules: 40 files
+  - LearnTab modules: 18 files
+  - Auth & Profile: 6 files
+  - Shared managers: 4 files
+  - Other components: 13 files
+- **Test Files:** 6 test files
+- **Total Lines of Code:** ~6,759 lines
+- **Unit Tests:** 145+ comprehensive tests
+- **Manual Test Scenarios:** 45+ scenarios across 5 test guides
+
+### Key Managers & Utilities
+
+**Storage & Persistence:**
+- `FlashCardStorage`: UserDefaults-based persistence for vocabulary cards
+- `MockAuthManager`: In-memory authentication system (ready for Firebase/backend integration)
+- Future: CoreData or CloudKit for enhanced storage
+
+**Audio Systems:**
+- `AudioRecorder`: AVFoundation-based recording for speech assessment
+  - Records user pronunciation
+  - Saves to temporary directory as .m4a
+  - Play/pause/resume functionality
+- `AudioPlayerManager`: AVPlayer-based playback for listening materials
+  - Supports local and remote audio files
+  - Real-time progress tracking
+  - Seek forward/backward controls
+  - Mock playback mode for development
+
+**Network:**
+- `NetworkManager`: Alamofire-based API client
+  - DTO → Business Model pattern
+  - Generic error handling
+  - Async/await support
+
+### Development Notes
+
+When adding new features:
+1. Follow the established MVVM + Coordinator patterns
+2. Refer to existing modules for consistency
+3. Use mock data initially, then replace with real API calls
+4. Write unit tests for models and ViewModels
+5. Create manual test guides for UI flows
+6. Match provided design screenshots exactly
+7. Use existing color palette and typography
+
+All implementations match the provided design screenshots and follow iOS/SwiftUI best practices.

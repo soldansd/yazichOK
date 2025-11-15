@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ProgressView: View {
+struct ProgressTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
@@ -48,5 +48,5 @@ struct ProgressView: View {
 }
 
 #Preview {
-    ProgressView()
+    ProgressTabView()
 }
