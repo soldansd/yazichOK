@@ -142,21 +142,45 @@ final class MockAuthManager: ObservableObject {
     // MARK: - Persistence
 
     private func saveAuthState() {
-        // Save to UserDefaults (already on main thread)
+        // Save authentication state
         UserDefaults.standard.set(self.isAuthenticated, forKey: self.isAuthenticatedKey)
-        if let user = self.currentUser, let encoded = try? JSONEncoder().encode(user) {
-            UserDefaults.standard.set(encoded, forKey: self.currentUserKey)
+
+        // Save user data with error handling
+        if let user = self.currentUser {
+            do {
+                let encoded = try JSONEncoder().encode(user)
+                UserDefaults.standard.set(encoded, forKey: self.currentUserKey)
+
+                if AppConfiguration.enableLogging {
+                    print("✅ MockAuthManager: Successfully saved user data")
+                }
+            } catch {
+                print("❌ MockAuthManager: Failed to encode user - \(error.localizedDescription)")
+                // Continue execution - auth state is still saved
+            }
         }
     }
 
     private func loadAuthState() {
-        // Load from UserDefaults (already on main thread)
+        // Load authentication state
         let authenticated = UserDefaults.standard.bool(forKey: isAuthenticatedKey)
         var user: User? = nil
 
-        if let userData = UserDefaults.standard.data(forKey: currentUserKey),
-           let decodedUser = try? JSONDecoder().decode(User.self, from: userData) {
-            user = decodedUser
+        // Load user data with error handling
+        if let userData = UserDefaults.standard.data(forKey: currentUserKey) {
+            do {
+                user = try JSONDecoder().decode(User.self, from: userData)
+
+                if AppConfiguration.enableLogging {
+                    print("✅ MockAuthManager: Successfully loaded user data")
+                }
+            } catch {
+                print("⚠️ MockAuthManager: Failed to decode user - \(error.localizedDescription)")
+                print("Corrupted user data will be cleared.")
+                // Clear corrupted data
+                UserDefaults.standard.removeObject(forKey: currentUserKey)
+                user = nil
+            }
         }
 
         self.isAuthenticated = authenticated

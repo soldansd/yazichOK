@@ -9,14 +9,16 @@ import Foundation
 
 @MainActor
 class RecordingViewModel: ObservableObject {
-    
+
     let topicID: Int
-    
+
     @Published var currentQuestion: Question?
     @Published var errorMessage: String?
     @Published var progress: Double = 0.0
     @Published var isRecording: Bool = false
-    
+    @Published var isLoadingSession: Bool = false
+    @Published var isUploadingAudio: Bool = false
+
     private var timer: Timer?
     private(set) var elapsedTime: TimeInterval = 0
     let maxDuration: TimeInterval = 30
@@ -85,24 +87,41 @@ class RecordingViewModel: ObservableObject {
             let session,
             let currentQuestion
         else { return }
-        
+
+        isUploadingAudio = true
+        errorMessage = nil
+
         do {
             try await NetworkManager.shared.uploadAudioFile(fileURL: fileURL, sessionID: session.id, questionID: currentQuestion.id)
+            errorMessage = nil
+        } catch let error as NetworkError {
+            errorMessage = error.localizedDescription
+            print("Upload file error: \(error.localizedDescription)")
         } catch {
+            errorMessage = "Upload failed: \(error.localizedDescription)"
             print("Upload file error: \(error.localizedDescription)")
         }
+
+        isUploadingAudio = false
     }
-    
+
     func loadSession() async {
+        isLoadingSession = true
+        errorMessage = nil
+
         do {
             let fetchedSession = try await NetworkManager.shared.getRecordingSession(id: topicID)
             session = fetchedSession.toModel()
             errorMessage = nil
         } catch let error as APIError {
             errorMessage = "Error \(error.code): \(error.message)"
+        } catch let error as NetworkError {
+            errorMessage = error.localizedDescription
         } catch {
             errorMessage = "Unexpected error: \(error.localizedDescription)"
         }
+
+        isLoadingSession = false
     }
     
     private func startTimer() {

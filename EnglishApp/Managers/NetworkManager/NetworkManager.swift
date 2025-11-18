@@ -87,6 +87,8 @@ final class NetworkManager {
     }
     
     func uploadAudioFile(fileURL: URL, sessionID: UUID, questionID: Int) async throws {
+        // Validate file before upload
+        try validateAudioFile(at: fileURL)
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
 
@@ -96,20 +98,61 @@ final class NetworkManager {
             }, to: "\(baseURL)/sessions/\(sessionID)/answer", method: .post)
             .uploadProgress { progress in
                 let progressPercentage = progress.fractionCompleted * 100
-                print(String(format: "Upload Progress: %.2f%%", progressPercentage))
+                if AppConfiguration.enableLogging {
+                    print(String(format: "Upload Progress: %.2f%%", progressPercentage))
+                }
             }
             .response { response in
                 if let error = response.error {
                     print("File upload error: \(error.localizedDescription)")
                     continuation.resume(throwing: error)
                 } else if let statusCode = response.response?.statusCode, (200...299).contains(statusCode) {
-                    print("File uploaded successfully.")
+                    if AppConfiguration.enableLogging {
+                        print("File uploaded successfully.")
+                    }
                     continuation.resume()
                 } else {
                     let error = NSError(domain: "UploadError", code: response.response?.statusCode ?? 500, userInfo: nil)
                     continuation.resume(throwing: error)
                 }
             }
+        }
+    }
+
+    private func validateAudioFile(at fileURL: URL) throws {
+        let fileManager = FileManager.default
+
+        // Check if file exists
+        guard fileManager.fileExists(atPath: fileURL.path) else {
+            throw NetworkError.fileNotFound(fileURL)
+        }
+
+        // Check file size (max 50MB for audio files)
+        do {
+            let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
+            if let fileSize = attributes[.size] as? Int64 {
+                let maxSize: Int64 = 50 * 1024 * 1024 // 50MB
+                guard fileSize <= maxSize else {
+                    throw NetworkError.fileTooLarge(size: fileSize, maxSize: maxSize)
+                }
+
+                if AppConfiguration.enableLogging {
+                    let sizeMB = Double(fileSize) / 1_048_576
+                    print(String(format: "📎 File size: %.2f MB", sizeMB))
+                }
+            }
+        } catch let error as NetworkError {
+            throw error
+        } catch {
+            print("⚠️ Could not read file attributes: \(error.localizedDescription)")
+            // Continue with upload even if we can't read attributes
+        }
+
+        // Validate file extension
+        let pathExtension = fileURL.pathExtension.lowercased()
+        let validExtensions = ["m4a", "mp3", "wav", "aac"]
+        guard validExtensions.contains(pathExtension) else {
+            throw NetworkError.invalidFileType(expected: "audio (m4a, mp3, wav, aac)", actual: pathExtension)
         }
     }
     

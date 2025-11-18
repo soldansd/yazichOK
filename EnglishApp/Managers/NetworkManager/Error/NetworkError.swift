@@ -14,6 +14,9 @@ enum NetworkError: Error {
     case noConnection
     case connectionFailed(Error)
     case decodingError(Error)
+    case fileNotFound(URL)
+    case fileTooLarge(size: Int64, maxSize: Int64)
+    case invalidFileType(expected: String, actual: String)
 }
 
 extension NetworkError: LocalizedError {
@@ -31,6 +34,14 @@ extension NetworkError: LocalizedError {
             return "Connection failed: \(error.localizedDescription)"
         case .decodingError(let error):
             return "Failed to decode response: \(error.localizedDescription)"
+        case .fileNotFound(let url):
+            return "File not found at: \(url.path)"
+        case .fileTooLarge(let size, let maxSize):
+            let sizeMB = Double(size) / 1_048_576
+            let maxSizeMB = Double(maxSize) / 1_048_576
+            return String(format: "File is too large (%.1f MB). Maximum size is %.1f MB", sizeMB, maxSizeMB)
+        case .invalidFileType(let expected, let actual):
+            return "Invalid file type. Expected \(expected), but got \(actual)"
         }
     }
 }
