@@ -7,23 +7,89 @@
 
 import Foundation
 
+enum StorageError: LocalizedError {
+    case encodingFailed(Error)
+    case decodingFailed(Error)
+    case saveFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .encodingFailed(let error):
+            return "Failed to encode data: \(error.localizedDescription)"
+        case .decodingFailed(let error):
+            return "Failed to decode data: \(error.localizedDescription)"
+        case .saveFailed(let key):
+            return "Failed to save data for key: \(key)"
+        }
+    }
+}
+
 final class FlashCardStorage: ObservableObject {
     static let shared = FlashCardStorage()
 
     @Published private(set) var groups: [WordGroup] = []
     @Published private(set) var cards: [FlashCard] = []
+    @Published private(set) var lastError: StorageError?
 
     private let groupsKey = "flashcard_groups"
     private let cardsKey = "flashcard_cards"
 
     private init() {
-        loadData()
-        // Add mock data if empty
-        Task { @MainActor in
-            if self.groups.isEmpty {
+        // Load data synchronously to avoid race conditions
+        let (loadedGroups, loadedCards) = Self.loadDataFromUserDefaults()
+        self.groups = loadedGroups
+        self.cards = loadedCards
+
+        // Add mock data if empty (deferred to avoid blocking init)
+        if self.groups.isEmpty {
+            Task { @MainActor in
                 await self.setupMockData()
             }
         }
+    }
+
+    private static func loadDataFromUserDefaults() -> ([WordGroup], [FlashCard]) {
+        let groupsKey = "flashcard_groups"
+        let cardsKey = "flashcard_cards"
+
+        let loadedGroups: [WordGroup]
+        let loadedCards: [FlashCard]
+
+        // Load groups with error handling
+        if let groupsData = UserDefaults.standard.data(forKey: groupsKey) {
+            do {
+                loadedGroups = try JSONDecoder().decode([WordGroup].self, from: groupsData)
+            } catch {
+                print("⚠️ FlashCardStorage: Failed to decode groups - \(error.localizedDescription)")
+                if AppConfiguration.enableLogging {
+                    print("Corrupted data will be cleared. Starting fresh.")
+                }
+                // Clear corrupted data
+                UserDefaults.standard.removeObject(forKey: groupsKey)
+                loadedGroups = []
+            }
+        } else {
+            loadedGroups = []
+        }
+
+        // Load cards with error handling
+        if let cardsData = UserDefaults.standard.data(forKey: cardsKey) {
+            do {
+                loadedCards = try JSONDecoder().decode([FlashCard].self, from: cardsData)
+            } catch {
+                print("⚠️ FlashCardStorage: Failed to decode cards - \(error.localizedDescription)")
+                if AppConfiguration.enableLogging {
+                    print("Corrupted data will be cleared. Starting fresh.")
+                }
+                // Clear corrupted data
+                UserDefaults.standard.removeObject(forKey: cardsKey)
+                loadedCards = []
+            }
+        } else {
+            loadedCards = []
+        }
+
+        return (loadedGroups, loadedCards)
     }
 
     // MARK: - Group Management
@@ -105,41 +171,52 @@ final class FlashCardStorage: ObservableObject {
 
     private func saveGroups() async {
         let groupsCopy = await MainActor.run { self.groups }
-        if let encoded = try? JSONEncoder().encode(groupsCopy) {
+
+        do {
+            let encoded = try JSONEncoder().encode(groupsCopy)
             UserDefaults.standard.set(encoded, forKey: groupsKey)
+
+            // Clear error on successful save
+            await MainActor.run {
+                self.lastError = nil
+            }
+
+            if AppConfiguration.enableLogging {
+                print("✅ FlashCardStorage: Successfully saved \(groupsCopy.count) groups")
+            }
+        } catch {
+            let storageError = StorageError.encodingFailed(error)
+            await MainActor.run {
+                self.lastError = storageError
+            }
+            print("❌ FlashCardStorage: Failed to save groups - \(error.localizedDescription)")
         }
     }
 
     private func saveCards() async {
         let cardsCopy = await MainActor.run { self.cards }
-        if let encoded = try? JSONEncoder().encode(cardsCopy) {
+
+        do {
+            let encoded = try JSONEncoder().encode(cardsCopy)
             UserDefaults.standard.set(encoded, forKey: cardsKey)
+
+            // Clear error on successful save
+            await MainActor.run {
+                self.lastError = nil
+            }
+
+            if AppConfiguration.enableLogging {
+                print("✅ FlashCardStorage: Successfully saved \(cardsCopy.count) cards")
+            }
+        } catch {
+            let storageError = StorageError.encodingFailed(error)
+            await MainActor.run {
+                self.lastError = storageError
+            }
+            print("❌ FlashCardStorage: Failed to save cards - \(error.localizedDescription)")
         }
     }
 
-    private func loadData() {
-        let loadedGroups: [WordGroup]
-        let loadedCards: [FlashCard]
-
-        if let groupsData = UserDefaults.standard.data(forKey: groupsKey),
-           let decodedGroups = try? JSONDecoder().decode([WordGroup].self, from: groupsData) {
-            loadedGroups = decodedGroups
-        } else {
-            loadedGroups = []
-        }
-
-        if let cardsData = UserDefaults.standard.data(forKey: cardsKey),
-           let decodedCards = try? JSONDecoder().decode([FlashCard].self, from: cardsData) {
-            loadedCards = decodedCards
-        } else {
-            loadedCards = []
-        }
-
-        Task { @MainActor in
-            self.groups = loadedGroups
-            self.cards = loadedCards
-        }
-    }
 
     // MARK: - Mock Data
 

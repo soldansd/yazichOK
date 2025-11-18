@@ -37,6 +37,7 @@ enum AuthError: LocalizedError {
     }
 }
 
+@MainActor
 final class MockAuthManager: ObservableObject {
     static let shared = MockAuthManager()
 
@@ -55,7 +56,7 @@ final class MockAuthManager: ObservableObject {
     // MARK: - Sign In
 
     func signIn(email: String, password: String) async throws {
-        // Validate inputs (background thread)
+        // Validate inputs
         guard !email.isEmpty, !password.isEmpty else {
             throw AuthError.emptyFields
         }
@@ -64,30 +65,28 @@ final class MockAuthManager: ObservableObject {
             throw AuthError.invalidEmail
         }
 
-        // Check if user exists (background thread)
+        // Check if user exists
         guard let userData = users[email.lowercased()] else {
             throw AuthError.userNotFound
         }
 
-        // Check password (background thread)
+        // Check password
         guard userData.password == password else {
             throw AuthError.incorrectPassword
         }
 
-        // Update UI state on main thread
-        await MainActor.run {
-            self.currentUser = userData.user
-            self.isAuthenticated = true
-        }
+        // Update UI state (already on main thread)
+        self.currentUser = userData.user
+        self.isAuthenticated = true
 
-        // Save state (background thread)
+        // Save state
         saveAuthState()
     }
 
     // MARK: - Sign Up
 
     func signUp(fullName: String, email: String, password: String, confirmPassword: String) async throws {
-        // Validate inputs (background thread)
+        // Validate inputs
         guard !fullName.isEmpty, !email.isEmpty, !password.isEmpty, !confirmPassword.isEmpty else {
             throw AuthError.emptyFields
         }
@@ -104,35 +103,31 @@ final class MockAuthManager: ObservableObject {
             throw AuthError.passwordsDoNotMatch
         }
 
-        // Check if email already exists (background thread)
+        // Check if email already exists
         guard users[email.lowercased()] == nil else {
             throw AuthError.emailAlreadyExists
         }
 
-        // Create new user (background thread)
+        // Create new user (thread-safe now with @MainActor)
         let newUser = User(fullName: fullName, email: email)
         users[email.lowercased()] = (password: password, user: newUser)
 
-        // Update UI state on main thread
-        await MainActor.run {
-            self.currentUser = newUser
-            self.isAuthenticated = true
-        }
+        // Update UI state (already on main thread)
+        self.currentUser = newUser
+        self.isAuthenticated = true
 
-        // Save state (background thread)
+        // Save state
         saveAuthState()
     }
 
     // MARK: - Sign Out
 
     func signOut() async {
-        // Update UI state on main thread
-        await MainActor.run {
-            self.currentUser = nil
-            self.isAuthenticated = false
-        }
+        // Update UI state (already on main thread)
+        self.currentUser = nil
+        self.isAuthenticated = false
 
-        // Clear state (background thread)
+        // Clear state
         clearAuthState()
     }
 
@@ -147,27 +142,49 @@ final class MockAuthManager: ObservableObject {
     // MARK: - Persistence
 
     private func saveAuthState() {
-        Task { @MainActor in
-            UserDefaults.standard.set(self.isAuthenticated, forKey: self.isAuthenticatedKey)
-            if let user = self.currentUser, let encoded = try? JSONEncoder().encode(user) {
+        // Save authentication state
+        UserDefaults.standard.set(self.isAuthenticated, forKey: self.isAuthenticatedKey)
+
+        // Save user data with error handling
+        if let user = self.currentUser {
+            do {
+                let encoded = try JSONEncoder().encode(user)
                 UserDefaults.standard.set(encoded, forKey: self.currentUserKey)
+
+                if AppConfiguration.enableLogging {
+                    print("✅ MockAuthManager: Successfully saved user data")
+                }
+            } catch {
+                print("❌ MockAuthManager: Failed to encode user - \(error.localizedDescription)")
+                // Continue execution - auth state is still saved
             }
         }
     }
 
     private func loadAuthState() {
+        // Load authentication state
         let authenticated = UserDefaults.standard.bool(forKey: isAuthenticatedKey)
         var user: User? = nil
 
-        if let userData = UserDefaults.standard.data(forKey: currentUserKey),
-           let decodedUser = try? JSONDecoder().decode(User.self, from: userData) {
-            user = decodedUser
+        // Load user data with error handling
+        if let userData = UserDefaults.standard.data(forKey: currentUserKey) {
+            do {
+                user = try JSONDecoder().decode(User.self, from: userData)
+
+                if AppConfiguration.enableLogging {
+                    print("✅ MockAuthManager: Successfully loaded user data")
+                }
+            } catch {
+                print("⚠️ MockAuthManager: Failed to decode user - \(error.localizedDescription)")
+                print("Corrupted user data will be cleared.")
+                // Clear corrupted data
+                UserDefaults.standard.removeObject(forKey: currentUserKey)
+                user = nil
+            }
         }
 
-        Task { @MainActor in
-            self.isAuthenticated = authenticated
-            self.currentUser = user
-        }
+        self.isAuthenticated = authenticated
+        self.currentUser = user
     }
 
     private func clearAuthState() {

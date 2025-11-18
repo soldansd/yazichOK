@@ -38,6 +38,9 @@ struct MemoriseWordsView: View {
                 BackButtonToolbar()
             }
         }
+        .task {
+            await viewModel.startSession()
+        }
     }
 
     private var reviewContent: some View {
@@ -284,7 +287,9 @@ struct MemoriseWordsView: View {
 
             VStack(spacing: 12) {
                 Button {
-                    viewModel.restartSession()
+                    Task {
+                        await viewModel.restartSession()
+                    }
                 } label: {
                     Text("Review Again")
                         .foregroundStyle(.white)

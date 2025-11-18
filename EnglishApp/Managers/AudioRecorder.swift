@@ -15,10 +15,12 @@ final class AudioRecorder {
     
     func requestPermissionAndRecord() {
         session.requestRecordPermission { granted in
-            if granted {
-                self.startRecording()
-            } else {
-                print("Microphone permission denied")
+            Task { @MainActor in
+                if granted {
+                    self.startRecording()
+                } else {
+                    print("Microphone permission denied")
+                }
             }
         }
     }
@@ -91,17 +93,34 @@ final class AudioRecorder {
             print("No recording available")
             return
         }
-        
+
         if !FileManager.default.fileExists(atPath: fileURL.path) {
             print("File does not exist: \(fileURL)")
             return
         }
-        
+
         do {
             player = try AVAudioPlayer(contentsOf: fileURL)
             player?.play()
         } catch {
             print("Cannot play audio: \(error.localizedDescription)")
+        }
+    }
+
+    deinit {
+        // Clean up active recording session
+        recorder?.stop()
+        recorder = nil
+
+        // Stop any active playback
+        player?.stop()
+        player = nil
+
+        // Deactivate audio session
+        do {
+            try session.setActive(false)
+        } catch {
+            print("Error deactivating session in deinit: \(error.localizedDescription)")
         }
     }
 }
