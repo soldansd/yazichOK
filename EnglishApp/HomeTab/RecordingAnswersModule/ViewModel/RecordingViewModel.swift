@@ -132,4 +132,13 @@ class RecordingViewModel: ObservableObject {
         progress = 0.0
     }
 
+    deinit {
+        // Clean up timer to prevent memory leaks
+        timer?.invalidate()
+        timer = nil
+
+        // Stop any active recording
+        AudioRecorder.shared.stopRecording()
+    }
+
 }

@@ -17,13 +17,41 @@ final class FlashCardStorage: ObservableObject {
     private let cardsKey = "flashcard_cards"
 
     private init() {
-        loadData()
-        // Add mock data if empty
-        Task { @MainActor in
-            if self.groups.isEmpty {
+        // Load data synchronously to avoid race conditions
+        let (loadedGroups, loadedCards) = Self.loadDataFromUserDefaults()
+        self.groups = loadedGroups
+        self.cards = loadedCards
+
+        // Add mock data if empty (deferred to avoid blocking init)
+        if self.groups.isEmpty {
+            Task { @MainActor in
                 await self.setupMockData()
             }
         }
+    }
+
+    private static func loadDataFromUserDefaults() -> ([WordGroup], [FlashCard]) {
+        let groupsKey = "flashcard_groups"
+        let cardsKey = "flashcard_cards"
+
+        let loadedGroups: [WordGroup]
+        let loadedCards: [FlashCard]
+
+        if let groupsData = UserDefaults.standard.data(forKey: groupsKey),
+           let decodedGroups = try? JSONDecoder().decode([WordGroup].self, from: groupsData) {
+            loadedGroups = decodedGroups
+        } else {
+            loadedGroups = []
+        }
+
+        if let cardsData = UserDefaults.standard.data(forKey: cardsKey),
+           let decodedCards = try? JSONDecoder().decode([FlashCard].self, from: cardsData) {
+            loadedCards = decodedCards
+        } else {
+            loadedCards = []
+        }
+
+        return (loadedGroups, loadedCards)
     }
 
     // MARK: - Group Management
@@ -117,29 +145,6 @@ final class FlashCardStorage: ObservableObject {
         }
     }
 
-    private func loadData() {
-        let loadedGroups: [WordGroup]
-        let loadedCards: [FlashCard]
-
-        if let groupsData = UserDefaults.standard.data(forKey: groupsKey),
-           let decodedGroups = try? JSONDecoder().decode([WordGroup].self, from: groupsData) {
-            loadedGroups = decodedGroups
-        } else {
-            loadedGroups = []
-        }
-
-        if let cardsData = UserDefaults.standard.data(forKey: cardsKey),
-           let decodedCards = try? JSONDecoder().decode([FlashCard].self, from: cardsData) {
-            loadedCards = decodedCards
-        } else {
-            loadedCards = []
-        }
-
-        Task { @MainActor in
-            self.groups = loadedGroups
-            self.cards = loadedCards
-        }
-    }
 
     // MARK: - Mock Data
 

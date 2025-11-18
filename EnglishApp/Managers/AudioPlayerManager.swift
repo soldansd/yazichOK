@@ -99,6 +99,12 @@ class AudioPlayerManager: ObservableObject {
     }
 
     private func addTimeObserver() {
+        // Remove existing observer if any to prevent multiple observers
+        if let existingObserver = timeObserver {
+            player?.removeTimeObserver(existingObserver)
+            timeObserver = nil
+        }
+
         let interval = CMTime(seconds: 0.1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self else { return }
@@ -163,16 +169,27 @@ class AudioPlayerManager: ObservableObject {
 
     func reset() {
         Task { @MainActor in
-            if let timeObserver = self.timeObserver {
-                self.player?.removeTimeObserver(timeObserver)
-            }
-            self.stopMockPlayback()
-            self.player = nil
+            self.cleanupPlayerResources()
             self.isPlaying = false
             self.currentTime = 0
             self.duration = 0
             self.playbackError = nil
         }
+    }
+
+    @MainActor
+    private func cleanupPlayerResources() {
+        // Remove time observer to prevent memory leak
+        if let timeObserver = self.timeObserver {
+            self.player?.removeTimeObserver(timeObserver)
+            self.timeObserver = nil
+        }
+
+        // Stop mock playback timer
+        self.stopMockPlayback()
+
+        // Release player
+        self.player = nil
     }
 
     private func handlePlaybackEnded() {
@@ -214,6 +231,21 @@ class AudioPlayerManager: ObservableObject {
     }
 
     deinit {
-        reset()
+        // Synchronous cleanup in deinit to prevent memory leaks
+        // Remove time observer immediately
+        if let timeObserver = self.timeObserver {
+            self.player?.removeTimeObserver(timeObserver)
+            self.timeObserver = nil
+        }
+
+        // Stop timers
+        mockPlaybackTimer?.invalidate()
+        mockPlaybackTimer = nil
+
+        // Release player
+        self.player = nil
+
+        // Cancel all subscriptions
+        cancellables.removeAll()
     }
 }
