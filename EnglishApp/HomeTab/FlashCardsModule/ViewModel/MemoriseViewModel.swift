@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class MemoriseViewModel: ObservableObject {
     @Published var session: ReviewSession?
     @Published var showingStatistics = false
@@ -19,21 +20,19 @@ class MemoriseViewModel: ObservableObject {
 
     init(groupID: UUID) {
         self.groupID = groupID
-        Task {
-            await startSession()
-        }
+        // Don't spawn Task in init - use .task modifier in view instead
     }
 
     func startSession() async {
         let cards = await storage.getCards(for: groupID)
-        await MainActor.run {
-            guard !cards.isEmpty else {
-                self.showingStatistics = true
-                return
-            }
-            self.session = ReviewSession(groupID: self.groupID, cards: cards)
-            self.startTimer()
+
+        // Already on main thread due to @MainActor
+        guard !cards.isEmpty else {
+            self.showingStatistics = true
+            return
         }
+        self.session = ReviewSession(groupID: self.groupID, cards: cards)
+        self.startTimer()
     }
 
     func flipCard() {
@@ -57,14 +56,11 @@ class MemoriseViewModel: ObservableObject {
         }
     }
 
-    func restartSession() {
+    func restartSession() async {
         showingStatistics = false
-        Task {
-            await startSession()
-        }
+        await startSession()
     }
 
-    @MainActor
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in

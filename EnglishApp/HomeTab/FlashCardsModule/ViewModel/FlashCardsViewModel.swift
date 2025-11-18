@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class FlashCardsViewModel: ObservableObject {
     @Published var groups: [WordGroup] = []
     @Published var cardCounts: [UUID: Int] = [:]
@@ -16,13 +17,12 @@ class FlashCardsViewModel: ObservableObject {
     private let storage = FlashCardStorage.shared
 
     init() {
-        Task {
-            await loadGroups()
-        }
+        // Don't spawn Task in init - use .task modifier in view instead
     }
 
     func loadGroups() async {
-        let loadedGroups = await MainActor.run { storage.groups }
+        // Already on main thread due to @MainActor
+        let loadedGroups = storage.groups
 
         // Load card counts for all groups
         var counts: [UUID: Int] = [:]
@@ -31,10 +31,9 @@ class FlashCardsViewModel: ObservableObject {
             counts[group.id] = cards.count
         }
 
-        await MainActor.run {
-            self.groups = loadedGroups
-            self.cardCounts = counts
-        }
+        // Already on main thread - direct assignment
+        self.groups = loadedGroups
+        self.cardCounts = counts
     }
 
     func getCardCount(for groupID: UUID) async -> Int {

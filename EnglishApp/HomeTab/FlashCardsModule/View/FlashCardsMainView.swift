@@ -63,10 +63,8 @@ struct FlashCardsMainView: View {
                 BackButtonToolbar()
             }
         }
-        .onAppear {
-            Task {
-                await viewModel.loadGroups()
-            }
+        .task {
+            await viewModel.loadGroups()
         }
     }
 
